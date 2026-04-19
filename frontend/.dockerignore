@@ -1,0 +1,5 @@
+# Ignora a pasta de dependências local para não sobrescrever a do contêiner
+node_modules
+# Ignora os artefatos de build e cache do Vite
+dist
+.vite

@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: frontend-questions
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: frontend-questions
+  template:
+    metadata:
+      labels:
+        app: frontend-questions
+    spec:
+      containers:
+      - name: frontend-questions
+        image: frontend-questions:latest
+        imagePullPolicy: IfNotPresent # Ideal para Docker Desktop
+        ports:
+        - containerPort: 80
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: frontend-service
+spec:
+  selector:
+    app: frontend-questions
+  ports:
+    - protocol: TCP
+      port: 80
+      targetPort: 80

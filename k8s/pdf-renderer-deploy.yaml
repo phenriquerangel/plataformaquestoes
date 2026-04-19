@@ -1,0 +1,32 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: pdf-renderer
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: pdf-renderer
+  template:
+    metadata:
+      labels:
+        app: pdf-renderer
+    spec:
+      containers:
+      - name: pdf-renderer
+        image: pdf-renderer:latest
+        imagePullPolicy: IfNotPresent # Ideal para Docker Desktop
+        ports:
+        - containerPort: 3000
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: pdf-renderer-service
+spec:
+  selector:
+    app: pdf-renderer
+  ports:
+    - protocol: TCP
+      port: 3000
+      targetPort: 3000

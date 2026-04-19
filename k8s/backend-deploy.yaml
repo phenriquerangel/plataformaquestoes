@@ -1,0 +1,40 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: backend-questions
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: backend-questions
+  template:
+    metadata:
+      labels:
+        app: backend-questions
+    spec:
+      containers:
+      - name: backend-questions
+        image: backend-questions:latest
+        imagePullPolicy: IfNotPresent # Ideal para Docker Desktop
+        ports:
+        - containerPort: 8000
+        env:
+          - name: DATABASE_URL
+            value: "postgresql://admin:admin123@postgres-service:5432/questoesdb"
+          - name: GEMINI_API_KEY
+            valueFrom:
+              secretKeyRef:
+                name: gemini-secret
+                key: api-key
+---
+apiVersion: v1
+kind: Service
+metadata:
+  name: backend-questions-service
+spec:
+  selector:
+    app: backend-questions
+  ports:
+    - protocol: TCP
+      port: 8000
+      targetPort: 8000
