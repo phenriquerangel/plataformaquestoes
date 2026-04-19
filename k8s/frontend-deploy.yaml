@@ -18,6 +18,13 @@ spec:
         imagePullPolicy: IfNotPresent # Ideal para Docker Desktop
         ports:
         - containerPort: 80
+        volumeMounts:
+        - name: nginx-config
+          mountPath: /etc/nginx/conf.d/
+      volumes:
+      - name: nginx-config
+        configMap:
+          name: nginx-config
 ---
 apiVersion: v1
 kind: Service
@@ -30,3 +37,49 @@ spec:
     - protocol: TCP
       port: 80
       targetPort: 80
+---
+apiVersion: v1
+kind: ConfigMap
+metadata:
+  name: nginx-config
+data:
+  default.conf: |
+    log_format proxy_format '$remote_addr - $remote_user [$time_local] '
+                            '"$request" $status $body_bytes_sent '
+                            '"$http_referer" "$http_user_agent" '
+                            'upstream_addr=$upstream_addr '
+                            'upstream_status=$upstream_status '
+                            'upstream_response_time=$upstream_response_time '
+                            'request_time=$request_time';
+
+    # Atualizado em 2024-01-15 para usar FQDN direto
+    server {
+        listen 80;
+        server_name localhost;
+
+        # Habilita logs de acesso e erro detalhados para depuração
+        access_log /var/log/nginx/access.log proxy_format;
+        error_log /var/log/nginx/error.log info;
+
+        # Raiz para os arquivos estáticos do React
+        root /usr/share/nginx/html;
+        index index.html;
+
+        # Rota para a API do backend
+        location /api/ {
+            # Resolver DNS do Kubernetes
+            resolver 10.96.0.10 valid=30s;
+
+            # Usando o FQDN completo do service Kubernetes
+            proxy_pass http://backend-questions-service.default.svc.cluster.local:8000/;
+
+            # Headers importantes para o proxy reverso
+            proxy_set_header Host $host;
+            proxy_set_header X-Real-IP $remote_addr;
+        }
+
+        # Rota para servir a aplicação React (SPA)
+        location / {
+            try_files $uri /index.html;
+        }
+    }

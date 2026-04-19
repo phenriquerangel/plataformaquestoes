@@ -1,21 +1,24 @@
 #!/bin/bash
 set -e
+source "$(dirname "$0")/scripts/deploy-common.sh"
 
-echo "🚀 Iniciando build das imagens Docker..."
-docker build -t backend-questions:latest ./backend
-docker build -t frontend-questions:latest ./frontend
+GIT_SHA=$(git rev-parse --short HEAD)
+echo "Deploy (kind) | SHA: $GIT_SHA"
+echo
 
-echo "📥 Garantindo imagem do Postgres..."
-docker pull postgres:15-alpine
-kind load docker-image postgres:15-alpine --name plataforma-questoes
+check_prerequisites
+clean_deployments
+build_images "$GIT_SHA"
 
-echo "⚙️ Aplicando manifestos Kubernetes..."
-kubectl apply -f k8s/postgres-deploy.yaml
-kubectl apply -f k8s/backend-deploy.yaml
-kubectl apply -f k8s/frontend-deploy.yaml
+echo "Carregando imagens no cluster kind (paralelo)..."
+kind load docker-image backend-questions:${GIT_SHA}  --name plataforma-questoes &
+kind load docker-image pdf-renderer:${GIT_SHA}       --name plataforma-questoes &
+kind load docker-image frontend-questions:${GIT_SHA} --name plataforma-questoes &
+kind load docker-image postgres:15-alpine             --name plataforma-questoes &
+wait
+echo
 
-echo "🔄 Reiniciando os serviços para aplicar as mudanças..."
-kubectl rollout restart deployment/backend-questions
-kubectl rollout restart deployment/frontend-questions
-
-echo "✅ Processo concluído! Verifique os pods com: kubectl get pods"
+apply_manifests
+set_images_sha "$GIT_SHA"
+wait_rollouts
+print_summary "$GIT_SHA"

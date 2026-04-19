@@ -16,6 +16,7 @@ import {
 } from '@chakra-ui/react';
 import { Trash2, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
 import MathRenderer from './MathRenderer';
+import { DiagramRenderer } from './DiagramRenderer';
 
 function QuestionCard({ question, onDelete, onAddToList, customList, showDelete, highlight, index }) {
   const { isOpen, onToggle } = useDisclosure();
@@ -56,10 +57,9 @@ function QuestionCard({ question, onDelete, onAddToList, customList, showDelete,
               />
             </HStack>
           </HStack>
-          {/* Renderizador de Diagrama SVG */}
-          {question.diagrama_svg && (
-            <Flex justify="center">
-              <Box dangerouslySetInnerHTML={{ __html: question.diagrama_svg }} />
+          {question.diagrama && (
+            <Flex justify="center" my={2} p={4} bg="gray.50" borderRadius="lg" border="1px" borderColor="gray.200">
+              <DiagramRenderer diagrama={question.diagrama} />
             </Flex>
           )}
           <VStack align="stretch" spacing={2} pl={4}>
@@ -83,7 +83,7 @@ function QuestionCard({ question, onDelete, onAddToList, customList, showDelete,
           </Button>
           <Collapse in={isOpen} animateOpacity>
             <Box p={4} mt={2} bg="gray.50" borderRadius="md" border="1px" borderColor="gray.200">
-              <Text fontSize="sm"><strong>Resposta Correta:</strong> {question.resposta_correta}</Text>
+              <Text fontSize="sm" as="div"><Box as="strong" mr={1}>Resposta Correta:</Box><MathRenderer parts={question.resposta_correta} /></Text>
               <Text fontSize="sm" mt={2} as="div">
                 <Box as="strong" mr={1}>Explicação:</Box>
                 <MathRenderer parts={question.explicacao} highlight={highlight} />
