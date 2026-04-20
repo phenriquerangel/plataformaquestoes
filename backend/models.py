@@ -106,6 +106,7 @@ class GenerateRequest(BaseModel):
     dificuldade: str
     quantidade: int = Field(3, ge=1, le=10)
     tipo: str = "multipla_escolha"
+    serie: Optional[str] = None
 
 
 class TextPart(BaseModel):

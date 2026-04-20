@@ -235,7 +235,7 @@ function App() {
                     setTipo={setTipo}
                     questions={generator.questions}
                     loading={generator.loading}
-                    onGenerate={() => generator.generate({ materia, selectedAssuntos, difficulty, quantity, tipo })}
+                    onGenerate={() => generator.generate({ materia, serie: selectedSerie, selectedAssuntos, difficulty, quantity, tipo })}
                     onExport={() => handleExportPDF(generator.questions, 'AVALIAÇÃO DE DESEMPENHO')}
                     onDeleteQuestion={generator.deleteQuestion}
                     onAddToList={toggleQuestion}

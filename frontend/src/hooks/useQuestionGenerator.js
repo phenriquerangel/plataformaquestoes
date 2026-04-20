@@ -7,7 +7,7 @@ export function useQuestionGenerator() {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const generate = async ({ materia, selectedAssuntos, difficulty, quantity, tipo = 'multipla_escolha' }) => {
+  const generate = async ({ materia, serie, selectedAssuntos, difficulty, quantity, tipo = 'multipla_escolha' }) => {
     if (selectedAssuntos.length === 0) {
       toast({ title: 'Assunto obrigatório', status: 'warning' });
       return;
@@ -22,6 +22,7 @@ export function useQuestionGenerator() {
         dificuldade: difficulty,
         quantidade: parseInt(quantity),
         tipo,
+        ...(serie ? { serie } : {}),
       });
 
       const decoder = new TextDecoder();

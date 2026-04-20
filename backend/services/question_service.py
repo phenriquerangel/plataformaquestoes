@@ -33,7 +33,7 @@ _model = genai.GenerativeModel(
     },
 )
 
-_PROMPT_MULTIPLA_ESCOLHA = """Gere {quantidade} questões de múltipla escolha sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+_PROMPT_MULTIPLA_ESCOLHA = """Gere {quantidade} questões de múltipla escolha sobre o Tema '{assunto}' (Matéria: {materia}{serie_ctx}) com dificuldade '{dificuldade}'.
 
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
@@ -49,7 +49,7 @@ REGRAS DE FORMATAÇÃO (siga à risca):
 5. **CAMPO `alternativas`**: Lista de 5 strings simples sem prefixos "A)". Para matemática inline use `[math]...[/math]`.
 6. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, sem repetição."""
 
-_PROMPT_VERDADEIRO_FALSO = """Gere {quantidade} questões de verdadeiro ou falso sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+_PROMPT_VERDADEIRO_FALSO = """Gere {quantidade} questões de verdadeiro ou falso sobre o Tema '{assunto}' (Matéria: {materia}{serie_ctx}) com dificuldade '{dificuldade}'.
 
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
@@ -60,7 +60,7 @@ REGRAS DE FORMATAÇÃO (siga à risca):
 6. **CAMPO `explicacao`**: Explicação clara do por quê a afirmação é verdadeira ou falsa. Lista de objetos {{"type": "text"|"latex", "content": "..."}}.
 7. **VARIEDADE**: Misture afirmações verdadeiras e falsas. As {quantidade} questões devem abordar aspectos diferentes do tema."""
 
-_PROMPT_DISSERTATIVA = """Gere {quantidade} questões dissertativas sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+_PROMPT_DISSERTATIVA = """Gere {quantidade} questões dissertativas sobre o Tema '{assunto}' (Matéria: {materia}{serie_ctx}) com dificuldade '{dificuldade}'.
 
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
@@ -71,7 +71,7 @@ REGRAS DE FORMATAÇÃO (siga à risca):
 6. **CAMPO `explicacao`**: Resposta modelo completa e bem estruturada. Lista de objetos {{"type": "text"|"latex", "content": "..."}}.
 7. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, exigindo análise, síntese ou argumentação."""
 
-_PROMPT_MISTO = """Gere {quantidade} questões MISTAS (variando entre múltipla escolha, verdadeiro/falso e dissertativa) sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+_PROMPT_MISTO = """Gere {quantidade} questões MISTAS (variando entre múltipla escolha, verdadeiro/falso e dissertativa) sobre o Tema '{assunto}' (Matéria: {materia}{serie_ctx}) com dificuldade '{dificuldade}'.
 
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
@@ -125,11 +125,13 @@ def _clean_q_data(q_data: dict) -> dict | None:
 
 async def generate_and_stream(request: GenerateRequest, db, professor_id: int = None):
     template = _PROMPTS.get(request.tipo, _PROMPT_MULTIPLA_ESCOLHA)
+    serie_ctx = f", Série: {request.serie}" if request.serie else ""
     prompt = template.format(
         assunto=request.assunto,
         materia=request.materia,
         dificuldade=request.dificuldade,
         quantidade=request.quantidade,
+        serie_ctx=serie_ctx,
     )
 
     response = None
