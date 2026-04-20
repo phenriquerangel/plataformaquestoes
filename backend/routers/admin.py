@@ -295,10 +295,10 @@ def seed_bncc(db: Session = Depends(get_db), _=Depends(require_admin)):
     erros = []
 
     try:
-        for serie_nome, materias_dict in _BNCC_DATA.items():
+        for ordem, (serie_nome, materias_dict) in enumerate(_BNCC_DATA.items(), start=1):
             serie = db.query(SerieDB).filter(SerieDB.nome == serie_nome).first()
             if not serie:
-                serie = SerieDB(nome=serie_nome)
+                serie = SerieDB(nome=serie_nome, ordem=ordem)
                 db.add(serie)
                 db.flush()
                 series_criadas += 1
