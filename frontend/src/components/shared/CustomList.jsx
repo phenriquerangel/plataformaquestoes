@@ -2,6 +2,7 @@ import React from 'react';
 import {
   Card, CardBody, Stack, Flex, HStack, Badge, Input,
   Button, Divider, Wrap, Tag, TagLabel, TagCloseButton, IconButton,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { Download, ChevronUp, ChevronDown, Save } from 'lucide-react';
 
@@ -13,6 +14,9 @@ const partsToString = (parts) => {
 };
 
 export function CustomList({ customList, customListTitle, setCustomListTitle, onToggle, onMove, onClear, onExport, onSaveToListas }) {
+  const cardBg = useColorModeValue('brand.50', 'blue.900');
+  const inputBg = useColorModeValue('white', 'gray.700');
+
   if (customList.length === 0) return null;
 
   const handleSave = () => {
@@ -20,7 +24,7 @@ export function CustomList({ customList, customListTitle, setCustomListTitle, on
   };
 
   return (
-    <Card borderRadius="2xl" border="2px" borderColor="brand.500" mb={8} bg="brand.50" shadow="md">
+    <Card borderRadius="2xl" border="2px" borderColor="brand.500" mb={8} bg={cardBg} shadow="md">
       <CardBody>
         <Stack spacing={4}>
           <Flex justify="space-between" align="center" direction={{ base: 'column', md: 'row' }} gap={4}>
@@ -28,7 +32,7 @@ export function CustomList({ customList, customListTitle, setCustomListTitle, on
               <Badge colorScheme="brand" p={2} borderRadius="lg" fontSize="sm">
                 {customList.length} questões no carrinho
               </Badge>
-              <Input variant="filled" bg="white" placeholder="Título da sua lista..."
+              <Input variant="filled" bg={inputBg} placeholder="Título da sua lista..."
                 value={customListTitle} onChange={(e) => setCustomListTitle(e.target.value)} />
             </HStack>
             <HStack spacing={3} w={{ base: 'full', md: 'auto' }} justify="flex-end">

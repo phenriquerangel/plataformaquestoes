@@ -4,11 +4,12 @@ import {
   FormControl, FormLabel, Select, Input, Button, HStack,
 } from '@chakra-ui/react';
 import { Sparkles, Download } from 'lucide-react';
+import { SERIES_OPTIONS } from '../../constants/series';
 import { AssuntoSelector } from '../shared/AssuntoSelector';
 import { QuestionList } from '../shared/QuestionList';
 
 export function QuestionGenerator({
-  materiasList, materia, onMateriaChange,
+  materiasList, selectedSerie, onSerieChange, materia, onMateriaChange,
   selectedAssuntos, filteredAssuntos, subjectSearch, onSearchChange, onToggleAssunto,
   difficulty, setDifficulty,
   quantity, setQuantity,
@@ -16,6 +17,7 @@ export function QuestionGenerator({
   questions, loading,
   onGenerate, onExport,
   onDeleteQuestion, onAddToList, customList,
+  listas, onAddToLista, onCreateAndAdd,
 }) {
   return (
     <>
@@ -24,7 +26,14 @@ export function QuestionGenerator({
           <Heading size="md">Parametrizar Exercícios</Heading>
         </CardHeader>
         <CardBody>
-          <SimpleGrid columns={{ base: 1, md: 2, lg: 4 }} spacing={6}>
+          <SimpleGrid columns={{ base: 1, sm: 2, lg: 4 }} spacing={6}>
+            <FormControl>
+              <FormLabel fontSize="xs" textTransform="uppercase" fontWeight="bold">Série</FormLabel>
+              <Select value={selectedSerie} onChange={onSerieChange} borderRadius="lg">
+                <option value="">Todas as Séries</option>
+                {SERIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </Select>
+            </FormControl>
             <FormControl>
               <FormLabel fontSize="xs" textTransform="uppercase" fontWeight="bold">Matéria</FormLabel>
               <Select value={materia} onChange={onMateriaChange} borderRadius="lg">
@@ -32,7 +41,7 @@ export function QuestionGenerator({
                 {materiasList.map(m => <option key={m.id} value={m.nome}>{m.nome}</option>)}
               </Select>
             </FormControl>
-            <FormControl gridColumn={{ lg: 'span 2' }}>
+            <FormControl gridColumn={{ sm: 'span 2', lg: 'span 2' }}>
               <FormLabel fontSize="xs" textTransform="uppercase" fontWeight="bold">Assunto</FormLabel>
               <AssuntoSelector
                 selectedAssuntos={selectedAssuntos}
@@ -86,6 +95,9 @@ export function QuestionGenerator({
         onAddToList={onAddToList}
         customList={customList}
         loading={loading}
+        listas={listas}
+        onAddToLista={onAddToLista}
+        onCreateAndAdd={onCreateAndAdd}
       />
     </>
   );

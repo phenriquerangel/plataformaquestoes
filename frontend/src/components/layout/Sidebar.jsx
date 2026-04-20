@@ -3,9 +3,9 @@ import {
   Box, VStack, HStack, Text, Heading, Flex, IconButton,
   Drawer, DrawerOverlay, DrawerContent, DrawerCloseButton,
   Popover, PopoverTrigger, PopoverContent, PopoverBody, PopoverArrow,
-  useDisclosure, Spinner, Divider,
+  useDisclosure, Spinner, Divider, useColorMode, useColorModeValue,
 } from '@chakra-ui/react';
-import { BrainCircuit, BarChart2, Sparkles, Database, Settings, Menu, RefreshCw, ClipboardList, LogOut, BookOpen } from 'lucide-react';
+import { BrainCircuit, BarChart2, Sparkles, Database, Settings, Menu, RefreshCw, ClipboardList, LogOut, BookOpen, Moon, Sun } from 'lucide-react';
 import { useHealthCheck } from '../../hooks/useHealthCheck';
 
 const NAV_ITEMS = [
@@ -35,6 +35,10 @@ function HealthIndicator() {
   const { health, loading, lastChecked, refresh } = useHealthCheck();
   const overallStatus = health?.status ?? (loading ? 'loading' : 'error');
   const components = health?.components ?? {};
+  const hoverBg = useColorModeValue('gray.50', 'gray.700');
+  const borderColor = useColorModeValue('gray.200', 'gray.600');
+  const textColor = useColorModeValue('gray.600', 'gray.300');
+  const subtleText = useColorModeValue('gray.500', 'gray.400');
 
   return (
     <Popover placement="top-start" trigger="hover">
@@ -46,23 +50,23 @@ function HealthIndicator() {
           py={3}
           cursor="pointer"
           borderRadius="xl"
-          _hover={{ bg: 'gray.50' }}
+          _hover={{ bg: hoverBg }}
         >
           {loading ? (
             <Spinner size="xs" color="gray.400" />
           ) : (
             <StatusDot status={overallStatus} />
           )}
-          <Text fontSize="xs" color="gray.500" fontWeight="medium">
+          <Text fontSize="xs" color={subtleText} fontWeight="medium">
             {loading ? 'Verificando...' : STATUS_LABEL[overallStatus] ?? 'Desconhecido'}
           </Text>
         </Flex>
       </PopoverTrigger>
-      <PopoverContent w="220px" borderRadius="xl" shadow="lg" border="1px" borderColor="gray.200">
+      <PopoverContent w="220px" borderRadius="xl" shadow="lg" border="1px" borderColor={borderColor}>
         <PopoverArrow />
         <PopoverBody p={4}>
           <HStack justify="space-between" mb={3}>
-            <Text fontSize="xs" fontWeight="bold" color="gray.500" textTransform="uppercase">
+            <Text fontSize="xs" fontWeight="bold" color={subtleText} textTransform="uppercase">
               Status do Sistema
             </Text>
             <IconButton
@@ -76,10 +80,10 @@ function HealthIndicator() {
           <VStack align="stretch" spacing={2}>
             {Object.entries(components).map(([key, val]) => (
               <Flex key={key} align="center" justify="space-between">
-                <Text fontSize="sm" color="gray.600">{COMPONENT_LABEL[key] ?? key}</Text>
+                <Text fontSize="sm" color={textColor}>{COMPONENT_LABEL[key] ?? key}</Text>
                 <HStack spacing={1.5}>
                   <StatusDot status={val.status} size="8px" />
-                  <Text fontSize="xs" color="gray.500">{STATUS_LABEL[val.status] ?? val.status}</Text>
+                  <Text fontSize="xs" color={subtleText}>{STATUS_LABEL[val.status] ?? val.status}</Text>
                 </HStack>
               </Flex>
             ))}
@@ -87,7 +91,7 @@ function HealthIndicator() {
           {lastChecked && (
             <>
               <Divider my={3} />
-              <Text fontSize="xs" color="gray.400" textAlign="center">
+              <Text fontSize="xs" color={subtleText} textAlign="center">
                 Atualizado {lastChecked.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
               </Text>
             </>
@@ -100,6 +104,12 @@ function HealthIndicator() {
 
 function NavItem({ item, isActive, onClick }) {
   const Icon = item.icon;
+  const hoverBg = useColorModeValue(isActive ? 'brand.50' : 'gray.100', isActive ? 'brand.900' : 'gray.700');
+  const hoverColor = useColorModeValue(isActive ? 'brand.600' : 'gray.700', isActive ? 'brand.300' : 'gray.100');
+  const activeBg = useColorModeValue('brand.50', 'brand.900');
+  const activeColor = useColorModeValue('brand.600', 'brand.300');
+  const inactiveColor = useColorModeValue('gray.500', 'gray.400');
+
   return (
     <Flex
       as="button"
@@ -113,9 +123,9 @@ function NavItem({ item, isActive, onClick }) {
       fontWeight="semibold"
       fontSize="sm"
       transition="all 0.15s"
-      bg={isActive ? 'brand.50' : 'transparent'}
-      color={isActive ? 'brand.600' : 'gray.500'}
-      _hover={{ bg: isActive ? 'brand.50' : 'gray.100', color: isActive ? 'brand.600' : 'gray.700' }}
+      bg={isActive ? activeBg : 'transparent'}
+      color={isActive ? activeColor : inactiveColor}
+      _hover={{ bg: hoverBg, color: hoverColor }}
       onClick={onClick}
     >
       <Icon size={18} />
@@ -126,15 +136,29 @@ function NavItem({ item, isActive, onClick }) {
 
 function SidebarContent({ activePage, onNavigate, isAdmin, username, onLogout }) {
   const visibleItems = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
+  const { colorMode, toggleColorMode } = useColorMode();
+  const usernameColor = useColorModeValue('gray.600', 'gray.300');
+  const roleColor = useColorModeValue('gray.400', 'gray.500');
+
   return (
     <Box h="full" display="flex" flexDirection="column" py={6} px={3}>
-      <HStack spacing={3} px={3} mb={8}>
-        <Box bg="brand.600" p={2} borderRadius="xl" color="white" shadow="md">
-          <BrainCircuit size={22} />
-        </Box>
-        <Heading size="md" fontWeight="800" letterSpacing="tight">
-          EduQuest<Text as="span" color="brand.600">.ai</Text>
-        </Heading>
+      <HStack spacing={3} px={3} mb={8} justify="space-between">
+        <HStack spacing={3}>
+          <Box bg="brand.600" p={2} borderRadius="xl" color="white" shadow="md">
+            <BrainCircuit size={22} />
+          </Box>
+          <Heading size="md" fontWeight="800" letterSpacing="tight">
+            EduQuest<Text as="span" color="brand.600">.ai</Text>
+          </Heading>
+        </HStack>
+        <IconButton
+          icon={colorMode === 'light' ? <Moon size={15} /> : <Sun size={15} />}
+          size="xs"
+          variant="ghost"
+          onClick={toggleColorMode}
+          aria-label="Alternar tema"
+          title={colorMode === 'light' ? 'Modo escuro' : 'Modo claro'}
+        />
       </HStack>
 
       <VStack spacing={1} align="stretch" flex="1">
@@ -151,8 +175,8 @@ function SidebarContent({ activePage, onNavigate, isAdmin, username, onLogout })
       <Divider mb={2} />
       <Flex align="center" justify="space-between" px={4} py={2}>
         <VStack align="start" spacing={0}>
-          <Text fontSize="xs" fontWeight="semibold" color="gray.600">{username}</Text>
-          <Text fontSize="xs" color="gray.400">{isAdmin ? 'Administrador' : 'Usuário'}</Text>
+          <Text fontSize="xs" fontWeight="semibold" color={usernameColor}>{username}</Text>
+          <Text fontSize="xs" color={roleColor}>{isAdmin ? 'Administrador' : 'Usuário'}</Text>
         </VStack>
         <IconButton
           icon={<LogOut size={14} />}
@@ -171,13 +195,16 @@ function SidebarContent({ activePage, onNavigate, isAdmin, username, onLogout })
 }
 
 export function Sidebar({ activePage, onNavigate, isAdmin, username, onLogout }) {
+  const bg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+
   return (
     <Box
       w="220px"
       h="100vh"
-      bg="white"
+      bg={bg}
       borderRight="1px"
-      borderColor="gray.200"
+      borderColor={borderColor}
       position="fixed"
       top={0}
       left={0}
@@ -193,6 +220,9 @@ export function MobileTopBar({ activePage, onNavigate, isAdmin, username, onLogo
   const { isOpen, onOpen, onClose } = useDisclosure();
   const visibleItems = NAV_ITEMS.filter(item => !item.adminOnly || isAdmin);
   const current = visibleItems.find(i => i.id === activePage);
+  const bg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.200', 'gray.700');
+  const labelColor = useColorModeValue('gray.500', 'gray.400');
 
   return (
     <>
@@ -201,9 +231,9 @@ export function MobileTopBar({ activePage, onNavigate, isAdmin, username, onLogo
         position="sticky"
         top={0}
         zIndex={10}
-        bg="white"
+        bg={bg}
         borderBottom="1px"
-        borderColor="gray.200"
+        borderColor={borderColor}
         px={4}
         py={3}
         align="center"
@@ -219,7 +249,7 @@ export function MobileTopBar({ activePage, onNavigate, isAdmin, username, onLogo
           </Heading>
         </HStack>
         <HStack>
-          {current && <Text fontSize="sm" fontWeight="semibold" color="gray.500">{current.label}</Text>}
+          {current && <Text fontSize="sm" fontWeight="semibold" color={labelColor}>{current.label}</Text>}
           <IconButton
             icon={<Menu size={20} />}
             variant="ghost"
@@ -232,7 +262,7 @@ export function MobileTopBar({ activePage, onNavigate, isAdmin, username, onLogo
 
       <Drawer isOpen={isOpen} placement="left" onClose={onClose}>
         <DrawerOverlay />
-        <DrawerContent maxW="220px">
+        <DrawerContent maxW="220px" bg={bg}>
           <DrawerCloseButton />
           <SidebarContent
             activePage={activePage}

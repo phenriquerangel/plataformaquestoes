@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
+import { AnimatePresence, motion } from 'framer-motion';
 import { MathJaxContext } from 'better-react-mathjax';
-import { Box, Container, useToast } from '@chakra-ui/react';
+import { Box, Container, useToast, useColorModeValue } from '@chakra-ui/react';
 import { useMaterias } from './hooks/useMaterias';
 import { useAssuntos } from './hooks/useAssuntos';
 import { useCustomList } from './hooks/useCustomList';
@@ -28,6 +29,14 @@ const mathJaxConfig = {
   tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
 };
 
+const pageVariants = {
+  initial: { opacity: 0, y: 8 },
+  animate: { opacity: 1, y: 0 },
+  exit:    { opacity: 0, y: -8 },
+};
+
+const pageTransition = { duration: 0.18, ease: 'easeOut' };
+
 function App() {
   const toast = useToast();
   const { isAuthenticated, isAdmin, username, login, logout } = useAuth();
@@ -36,12 +45,17 @@ function App() {
   const [difficulty, setDifficulty] = useState('Media');
   const [quantity, setQuantity] = useState(5);
   const [tipo, setTipo] = useState('multipla_escolha');
+  const [selectedSerie, setSelectedSerie] = useState('');
   const [materiaParaAssunto, setMateriaParaAssunto] = useState('');
   const [newMateria, setNewMateria] = useState('');
+  const [newMateriaSerie, setNewMateriaSerie] = useState('');
   const [newAssunto, setNewAssunto] = useState('');
+  const [newAssuntoSerie, setNewAssuntoSerie] = useState('');
   const [adminMateriaSearch, setAdminMateriaSearch] = useState('');
   const [adminAssuntoSearch, setAdminAssuntoSearch] = useState('');
   const [adminStats, setAdminStats] = useState({ total_materias: 0, total_assuntos: 0, total_questoes: 0, por_dificuldade: {}, por_materia: {} });
+
+  const bgColor = useColorModeValue('gray.50', 'gray.900');
 
   const { materiasList, fetchMaterias, addMateria, editMateria, deleteMateria } = useMaterias();
   const {
@@ -67,6 +81,10 @@ function App() {
   useEffect(() => { fetchMaterias(); }, [fetchMaterias]);
 
   useEffect(() => {
+    if (isAuthenticated) listas.fetchListas();
+  }, [isAuthenticated]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
     const matObj = materiasList.find(m => m.nome === materia);
     fetchAssuntosForMateria(matObj?.id ?? null);
   }, [materia, materiasList, fetchAssuntosForMateria]);
@@ -80,6 +98,7 @@ function App() {
     fetchMaterias();
     setSelectedAssuntos([]);
     if (page === 'admin' || page === 'dashboard') fetchAdminStats();
+    if (page === 'listas' || page === 'bank' || page === 'generator') listas.fetchListas();
   };
 
   const handleMateriaChange = (e) => {
@@ -100,9 +119,9 @@ function App() {
 
   const handleSaveEdit = async () => {
     if (editModal.editingItem.type === 'materia') {
-      await editMateria(editModal.editingItem.id, editModal.editValue);
+      await editMateria(editModal.editingItem.id, editModal.editValue, editModal.editSerie);
     } else {
-      await editAssunto(editModal.editingItem.id, editModal.editValue, materiaParaAssunto);
+      await editAssunto(editModal.editingItem.id, editModal.editValue, materiaParaAssunto, editModal.editSerie);
     }
     await Promise.all([
       materiaParaAssunto ? fetchAssuntosAdmin(materiaParaAssunto) : Promise.resolve(),
@@ -123,20 +142,36 @@ function App() {
   };
 
   const handleAddMateria = async () => {
-    const ok = await addMateria(newMateria);
-    if (ok) { setNewMateria(''); fetchAdminStats(); }
+    const ok = await addMateria(newMateria, newMateriaSerie);
+    if (ok) { setNewMateria(''); setNewMateriaSerie(''); fetchAdminStats(); }
   };
 
   const handleAddAssunto = async () => {
-    const ok = await addAssunto(newAssunto, materiaParaAssunto);
-    if (ok) { setNewAssunto(''); fetchAdminStats(); }
+    const ok = await addAssunto(newAssunto, materiaParaAssunto, newAssuntoSerie);
+    if (ok) { setNewAssunto(''); setNewAssuntoSerie(''); fetchAdminStats(); }
   };
 
   const handleResetFilters = () => {
+    setSelectedSerie('');
     setMateria('Geral');
     setSelectedAssuntos([]);
     setSubjectSearch('');
     bank.resetFilters();
+  };
+
+  const filteredMateriasBySerie = selectedSerie
+    ? materiasList.filter(m => m.serie === selectedSerie)
+    : materiasList;
+
+  const handleAddToLista = async (listaId, questaoId) => {
+    await listas.addQuestaoToLista(listaId, questaoId);
+  };
+
+  const handleCreateAndAdd = async (nome, question) => {
+    const nova = await listas.createLista(nome);
+    if (nova) {
+      await listas.addQuestaoToLista(nova.id, question.id);
+    }
   };
 
   if (!isAuthenticated) {
@@ -149,7 +184,7 @@ function App() {
 
   return (
     <MathJaxContext config={mathJaxConfig}>
-      <Box display="flex" minH="100vh" bg="gray.50">
+      <Box display="flex" minH="100vh" bg={bgColor}>
         <Sidebar activePage={activePage} onNavigate={handleNavigate} isAdmin={isAdmin} username={username} onLogout={logout} />
 
         <Box flex="1" ml={{ base: 0, md: '220px' }} display="flex" flexDirection="column">
@@ -167,106 +202,132 @@ function App() {
               onSaveToListas={listas.saveCurrentListAs}
             />
 
-            {activePage === 'dashboard' && (
-              <Dashboard stats={adminStats} />
-            )}
+            <AnimatePresence mode="wait">
+              <motion.div
+                key={activePage}
+                variants={pageVariants}
+                initial="initial"
+                animate="animate"
+                exit="exit"
+                transition={pageTransition}
+              >
+                {activePage === 'dashboard' && (
+                  <Dashboard stats={adminStats} />
+                )}
 
-            {activePage === 'generator' && (
-              <QuestionGenerator
-                materiasList={materiasList}
-                materia={materia}
-                onMateriaChange={handleMateriaChange}
-                selectedAssuntos={selectedAssuntos}
-                filteredAssuntos={filteredAssuntos}
-                subjectSearch={subjectSearch}
-                onSearchChange={setSubjectSearch}
-                onToggleAssunto={toggleAssunto}
-                difficulty={difficulty}
-                setDifficulty={setDifficulty}
-                quantity={quantity}
-                setQuantity={setQuantity}
-                tipo={tipo}
-                setTipo={setTipo}
-                questions={generator.questions}
-                loading={generator.loading}
-                onGenerate={() => generator.generate({ materia, selectedAssuntos, difficulty, quantity, tipo })}
-                onExport={() => handleExportPDF(generator.questions, 'AVALIAÇÃO DE DESEMPENHO')}
-                onDeleteQuestion={generator.deleteQuestion}
-                onAddToList={toggleQuestion}
-                customList={customList}
-              />
-            )}
+                {activePage === 'generator' && (
+                  <QuestionGenerator
+                    materiasList={filteredMateriasBySerie}
+                    selectedSerie={selectedSerie}
+                    onSerieChange={(e) => { setSelectedSerie(e.target.value); setMateria(''); setSelectedAssuntos([]); }}
+                    materia={materia}
+                    onMateriaChange={handleMateriaChange}
+                    selectedAssuntos={selectedAssuntos}
+                    filteredAssuntos={filteredAssuntos}
+                    subjectSearch={subjectSearch}
+                    onSearchChange={setSubjectSearch}
+                    onToggleAssunto={toggleAssunto}
+                    difficulty={difficulty}
+                    setDifficulty={setDifficulty}
+                    quantity={quantity}
+                    setQuantity={setQuantity}
+                    tipo={tipo}
+                    setTipo={setTipo}
+                    questions={generator.questions}
+                    loading={generator.loading}
+                    onGenerate={() => generator.generate({ materia, selectedAssuntos, difficulty, quantity, tipo })}
+                    onExport={() => handleExportPDF(generator.questions, 'AVALIAÇÃO DE DESEMPENHO')}
+                    onDeleteQuestion={generator.deleteQuestion}
+                    onAddToList={toggleQuestion}
+                    customList={customList}
+                    listas={listas.listas}
+                    onAddToLista={handleAddToLista}
+                    onCreateAndAdd={handleCreateAndAdd}
+                  />
+                )}
 
-            {activePage === 'bank' && (
-              <QuestionBank
-                materiasList={materiasList}
-                materia={materia}
-                onMateriaChange={handleMateriaChange}
-                filteredAssuntos={filteredAssuntos}
-                selectedAssuntos={selectedAssuntos}
-                subjectSearch={subjectSearch}
-                onSearchChange={setSubjectSearch}
-                onToggleAssunto={toggleAssunto}
-                keywordSearch={bank.keywordSearch}
-                setKeywordSearch={bank.setKeywordSearch}
-                idSearch={bank.idSearch}
-                setIdSearch={bank.setIdSearch}
-                difficultySearch={bank.difficultySearch}
-                setDifficultySearch={bank.setDifficultySearch}
-                sortOrder={bank.sortOrder}
-                setSortOrder={bank.setSortOrder}
-                questions={bank.questions}
-                loading={bank.loading}
-                totalQuestions={bank.totalQuestions}
-                offset={bank.offset}
-                onSearch={(offset) => bank.fetchQuestions(offset, { selectedAssuntos })}
-                onResetFilters={handleResetFilters}
-                onDeleteQuestion={bank.deleteQuestion}
-                onToggleInList={toggleQuestion}
-                onAddAll={() => addAll(bank.questions)}
-                customList={customList}
-              />
-            )}
+                {activePage === 'bank' && (
+                  <QuestionBank
+                    materiasList={filteredMateriasBySerie}
+                    selectedSerie={selectedSerie}
+                    onSerieChange={(e) => { setSelectedSerie(e.target.value); setMateria('Geral'); setSelectedAssuntos([]); }}
+                    materia={materia}
+                    onMateriaChange={handleMateriaChange}
+                    filteredAssuntos={filteredAssuntos}
+                    selectedAssuntos={selectedAssuntos}
+                    subjectSearch={subjectSearch}
+                    onSearchChange={setSubjectSearch}
+                    onToggleAssunto={toggleAssunto}
+                    keywordSearch={bank.keywordSearch}
+                    setKeywordSearch={bank.setKeywordSearch}
+                    idSearch={bank.idSearch}
+                    setIdSearch={bank.setIdSearch}
+                    difficultySearch={bank.difficultySearch}
+                    setDifficultySearch={bank.setDifficultySearch}
+                    sortOrder={bank.sortOrder}
+                    setSortOrder={bank.setSortOrder}
+                    questions={bank.questions}
+                    loading={bank.loading}
+                    totalQuestions={bank.totalQuestions}
+                    offset={bank.offset}
+                    onSearch={(offset) => bank.fetchQuestions(offset, { selectedAssuntos })}
+                    onResetFilters={handleResetFilters}
+                    onDeleteQuestion={bank.deleteQuestion}
+                    onToggleInList={toggleQuestion}
+                    onAddAll={() => addAll(bank.questions)}
+                    customList={customList}
+                    listas={listas.listas}
+                    onAddToLista={handleAddToLista}
+                    onCreateAndAdd={handleCreateAndAdd}
+                  />
+                )}
 
-            {activePage === 'listas' && (
-              <MinhasListas
-                listas={listas.listas}
-                loading={listas.loading}
-                onFetch={listas.fetchListas}
-                onCreate={listas.createLista}
-                onDelete={listas.deleteLista}
-                onRename={(id, nome) => listas.updateLista(id, { nome })}
-                onOpenLista={(lista) => {
-                  toast({ title: `Lista "${lista.nome}" — publicação disponível em breve`, status: 'info', duration: 2500 });
-                }}
-              />
-            )}
+                {activePage === 'listas' && (
+                  <MinhasListas
+                    listas={listas.listas}
+                    loading={listas.loading}
+                    onFetch={listas.fetchListas}
+                    onCreate={listas.createLista}
+                    onDelete={listas.deleteLista}
+                    onRename={(id, nome) => listas.updateLista(id, { nome })}
+                    fetchListaQuestoes={listas.fetchListaQuestoes}
+                    onRemoveQuestaoFromLista={listas.removeQuestaoFromLista}
+                    onUpdateLista={listas.updateLista}
+                    onExportPDF={handleExportPDF}
+                  />
+                )}
 
-            {activePage === 'logs' && <LogsPage />}
+                {activePage === 'logs' && <LogsPage />}
 
-            {activePage === 'admin' && (
-              <AdminPanel
-                currentUsername={username}
-                stats={adminStats}
-                materias={materiasList}
-                onEdit={(item, type) => editModal.open(item, type)}
-                onDelete={deleteDialog.open}
-                onAddMateria={handleAddMateria}
-                onAddAssunto={handleAddAssunto}
-                newMateria={newMateria}
-                setNewMateria={setNewMateria}
-                newAssunto={newAssunto}
-                setNewAssunto={setNewAssunto}
-                materiaParaAssunto={materiaParaAssunto}
-                setMateriaParaAssunto={setMateriaParaAssunto}
-                adminMateriaSearch={adminMateriaSearch}
-                setAdminMateriaSearch={setAdminMateriaSearch}
-                adminAssuntoSearch={adminAssuntoSearch}
-                setAdminAssuntoSearch={setAdminAssuntoSearch}
-                assuntosAdminList={assuntosAdminList}
-                onStatsRefresh={fetchAdminStats}
-              />
-            )}
+                {activePage === 'admin' && (
+                  <AdminPanel
+                    currentUsername={username}
+                    stats={adminStats}
+                    materias={materiasList}
+                    onEdit={(item, type) => editModal.open(item, type)}
+                    onDelete={deleteDialog.open}
+                    onAddMateria={handleAddMateria}
+                    onAddAssunto={handleAddAssunto}
+                    newMateria={newMateria}
+                    setNewMateria={setNewMateria}
+                    newMateriaSerie={newMateriaSerie}
+                    setNewMateriaSerie={setNewMateriaSerie}
+                    newAssunto={newAssunto}
+                    setNewAssunto={setNewAssunto}
+                    newAssuntoSerie={newAssuntoSerie}
+                    setNewAssuntoSerie={setNewAssuntoSerie}
+                    materiaParaAssunto={materiaParaAssunto}
+                    setMateriaParaAssunto={setMateriaParaAssunto}
+                    adminMateriaSearch={adminMateriaSearch}
+                    setAdminMateriaSearch={setAdminMateriaSearch}
+                    adminAssuntoSearch={adminAssuntoSearch}
+                    setAdminAssuntoSearch={setAdminAssuntoSearch}
+                    assuntosAdminList={assuntosAdminList}
+                    onStatsRefresh={fetchAdminStats}
+                  />
+                )}
+              </motion.div>
+            </AnimatePresence>
           </Container>
         </Box>
       </Box>
@@ -285,6 +346,8 @@ function App() {
         editingItem={editModal.editingItem}
         editValue={editModal.editValue}
         setEditValue={editModal.setEditValue}
+        editSerie={editModal.editSerie}
+        setEditSerie={editModal.setEditSerie}
         onSave={handleSaveEdit}
       />
     </MathJaxContext>

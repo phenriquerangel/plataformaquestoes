@@ -25,13 +25,13 @@ export function useAssuntos() {
     catch (err) { console.error('Erro ao carregar assuntos admin:', err); }
   }, [_fetchAssuntos]);
 
-  const addAssunto = async (nome, materiaId) => {
+  const addAssunto = async (nome, materiaId, serie) => {
     if (!nome || nome.trim() === '' || !materiaId) {
       toast({ title: 'Selecione uma matéria e digite o nome do assunto.', status: 'warning', duration: 3000 });
       return false;
     }
     try {
-      await apiClient('assuntos', 'POST', { nome: nome.trim(), materia_id: parseInt(materiaId) });
+      await apiClient('assuntos', 'POST', { nome: nome.trim(), materia_id: parseInt(materiaId), serie: serie || null });
       await fetchAssuntosAdmin(materiaId);
       toast({ title: 'Assunto cadastrado!', status: 'success' });
       return true;
@@ -41,9 +41,9 @@ export function useAssuntos() {
     }
   };
 
-  const editAssunto = async (id, nome, materiaId) => {
+  const editAssunto = async (id, nome, materiaId, serie) => {
     try {
-      await apiClient(`assuntos/${id}`, 'PUT', { nome, materia_id: parseInt(materiaId) });
+      await apiClient(`assuntos/${id}`, 'PUT', { nome, materia_id: parseInt(materiaId), serie: serie || null });
       toast({ title: 'Atualizado com sucesso!', status: 'success' });
     } catch (err) {
       toast({ title: 'Erro ao atualizar', status: 'error' });

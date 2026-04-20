@@ -17,25 +17,53 @@ spec:
         image: backend-questions:latest
         imagePullPolicy: IfNotPresent # Ideal para Docker Desktop
         ports:
-        - containerPort: 8000
+          - containerPort: 8000
         env:
+          # Constrói a URL de conexão com o banco a partir dos secrets
+          - name: POSTGRES_USER
+            valueFrom:
+              secretKeyRef:
+                name: postgres-credentials
+                key: POSTGRES_USER
+          - name: POSTGRES_PASSWORD
+            valueFrom:
+              secretKeyRef:
+                name: postgres-credentials
+                key: POSTGRES_PASSWORD
           - name: DATABASE_URL
-            value: "postgresql://admin:admin123@postgres-service:5432/questoesdb"
+            value: "postgresql://$(POSTGRES_USER):$(POSTGRES_PASSWORD)@postgres-service:5432/questoesdb"
+
+          # Puxa as demais credenciais e chaves do secret da aplicação
           - name: GEMINI_API_KEY
             valueFrom:
               secretKeyRef:
-                name: gemini-secret
-                key: api-key
+                name: app-secrets
+                key: GEMINI_API_KEY
           - name: ADMIN_USERNAME
-            value: "admin"
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: ADMIN_USERNAME
           - name: ADMIN_PASSWORD
-            value: "admin123"
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: ADMIN_PASSWORD
           - name: USER_USERNAME
-            value: "professor"
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: USER_USERNAME
           - name: USER_PASSWORD
-            value: "professor123"
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: USER_PASSWORD
           - name: JWT_SECRET_KEY
-            value: "troque-esta-chave-em-producao"
+            valueFrom:
+              secretKeyRef:
+                name: app-secrets
+                key: JWT_SECRET_KEY
           - name: OTEL_EXPORTER_OTLP_ENDPOINT
             value: "http://tempo.monitoring.svc.cluster.local:4317"
           - name: OTEL_EXPORTER_OTLP_INSECURE

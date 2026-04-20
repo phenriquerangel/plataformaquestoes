@@ -15,13 +15,13 @@ export function useMaterias() {
     }
   }, []);
 
-  const addMateria = async (nome) => {
+  const addMateria = async (nome, serie) => {
     if (!nome || nome.trim().length < 2) {
       toast({ title: 'O nome deve ter pelo menos 2 caracteres.', status: 'warning', duration: 3000 });
       return false;
     }
     try {
-      await apiClient('materias', 'POST', { nome: nome.trim() });
+      await apiClient('materias', 'POST', { nome: nome.trim(), serie: serie || null });
       await fetchMaterias();
       toast({ title: 'Matéria adicionada!', status: 'success' });
       return true;
@@ -31,9 +31,9 @@ export function useMaterias() {
     }
   };
 
-  const editMateria = async (id, nome) => {
+  const editMateria = async (id, nome, serie) => {
     try {
-      await apiClient(`materias/${id}`, 'PUT', { nome });
+      await apiClient(`materias/${id}`, 'PUT', { nome, serie: serie || null });
       await fetchMaterias();
       toast({ title: 'Atualizado com sucesso!', status: 'success' });
     } catch (err) {

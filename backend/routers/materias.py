@@ -1,4 +1,5 @@
-from fastapi import APIRouter, Depends, HTTPException
+from fastapi import APIRouter, Depends, HTTPException, Query
+from typing import Optional
 from sqlalchemy.orm import Session
 
 from auth import get_current_user, require_admin
@@ -10,8 +11,11 @@ router = APIRouter(prefix="/materias", tags=["Matérias"])
 
 
 @router.get("")
-def listar_materias(db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return db.query(MateriaDB).all()
+def listar_materias(serie: Optional[str] = Query(None), db: Session = Depends(get_db), _=Depends(get_current_user)):
+    q = db.query(MateriaDB)
+    if serie:
+        q = q.filter(MateriaDB.serie == serie)
+    return q.all()
 
 
 @router.post("")
@@ -19,7 +23,7 @@ def criar_materia(materia: MateriaCreate, db: Session = Depends(get_db), _=Depen
     if db.query(MateriaDB).filter(MateriaDB.nome == materia.nome).first():
         raise HTTPException(status_code=409, detail="Matéria com este nome já existe.")
     try:
-        db_materia = MateriaDB(nome=materia.nome)
+        db_materia = MateriaDB(nome=materia.nome, serie=materia.serie)
         db.add(db_materia)
         db.commit()
         db.refresh(db_materia)
@@ -37,6 +41,7 @@ def editar_materia(materia_id: int, materia: MateriaCreate, db: Session = Depend
         raise HTTPException(status_code=404, detail="Matéria não encontrada")
     try:
         db_materia.nome = materia.nome
+        db_materia.serie = materia.serie
         db.commit()
         db.refresh(db_materia)
         return db_materia

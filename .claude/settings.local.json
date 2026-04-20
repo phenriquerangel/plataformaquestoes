@@ -1,0 +1,14 @@
+{
+  "permissions": {
+    "allow": [
+      "Bash(kubectl get *)",
+      "Bash(bash ./deploy.sh)",
+      "Bash(kubectl describe *)",
+      "Bash(kubectl apply *)",
+      "Bash(kind version *)",
+      "Bash(cmd.exe /c \"kind version\")",
+      "Bash(cmd.exe /c \"docker images backend-questions --format \\\\\"{{.Tag}} {{.ID}} {{.CreatedAt}}\\\\\"\")",
+      "Bash(cmd.exe /c \"deploy.bat\")"
+    ]
+  }
+}

@@ -27,8 +27,10 @@ import {
   Td,
   IconButton,
   Select,
+  Badge,
 } from '@chakra-ui/react';
 import { LayoutGrid, BookOpen, Database, Edit3, Trash2 } from 'lucide-react';
+import { SERIES_OPTIONS } from '../../constants/series';
 
 export function AdminPanel({
   currentUsername,
@@ -40,8 +42,12 @@ export function AdminPanel({
   onAddAssunto,
   newMateria,
   setNewMateria,
+  newMateriaSerie,
+  setNewMateriaSerie,
   newAssunto,
   setNewAssunto,
+  newAssuntoSerie,
+  setNewAssuntoSerie,
   materiaParaAssunto,
   setMateriaParaAssunto,
   adminMateriaSearch,
@@ -107,11 +113,18 @@ export function AdminPanel({
           </CardHeader>
           <CardBody>
             <VStack spacing={4}>
-              <Input 
-                placeholder="Nome da Matéria" 
-                value={newMateria} 
-                onChange={(e) => setNewMateria(e.target.value)} 
+              <Input
+                placeholder="Nome da Matéria"
+                value={newMateria}
+                onChange={(e) => setNewMateria(e.target.value)}
               />
+              <Select
+                placeholder="Série / Ano (opcional)"
+                value={newMateriaSerie}
+                onChange={(e) => setNewMateriaSerie(e.target.value)}
+              >
+                {SERIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </Select>
               <Button w="full" colorScheme="blue" onClick={onAddMateria}>Adicionar</Button>
               
               <Divider />
@@ -132,26 +145,32 @@ export function AdminPanel({
                     <Thead bg="gray.50">
                       <Tr>
                         <Th>Nome</Th>
+                        <Th>Série</Th>
                         <Th width="80px" textAlign="right">Ações</Th>
                       </Tr>
                     </Thead>
                     <Tbody>
                       {materias.length === 0 ? (
-                        <Tr><Td colSpan={2} textAlign="center" py={4} color="gray.400">Nenhuma matéria</Td></Tr>
+                        <Tr><Td colSpan={3} textAlign="center" py={4} color="gray.400">Nenhuma matéria</Td></Tr>
                       ) : (
                         materias
                           .filter(m => m.nome.toLowerCase().includes(adminMateriaSearch.toLowerCase()))
                           .map(m => (
                             <Tr key={m.id} _hover={{ bg: "gray.50" }}>
                               <Td fontWeight="medium">{m.nome}</Td>
+                              <Td>
+                                {m.serie
+                                  ? <Badge colorScheme="purple" borderRadius="md">{m.serie}</Badge>
+                                  : <Text color="gray.300" fontSize="xs">—</Text>}
+                              </Td>
                               <Td textAlign="right">
                                 <HStack justify="flex-end" spacing={1}>
-                                  <IconButton 
-                                    size="xs" icon={<Edit3 size={14} />} colorScheme="blue" variant="ghost" 
+                                  <IconButton
+                                    size="xs" icon={<Edit3 size={14} />} colorScheme="blue" variant="ghost"
                                     onClick={() => onEdit(m, 'materia')}
                                   />
-                                  <IconButton 
-                                    size="xs" icon={<Trash2 size={14} />} colorScheme="red" variant="ghost" 
+                                  <IconButton
+                                    size="xs" icon={<Trash2 size={14} />} colorScheme="red" variant="ghost"
                                     onClick={() => onDelete(m.id, 'materia', m.nome)}
                                   />
                                 </HStack>
@@ -184,11 +203,18 @@ export function AdminPanel({
               >
                 {materias.map(m => <option key={m.id} value={m.id}>{m.nome}</option>)}
               </Select>
-              <Input 
-                placeholder="Nome do Assunto" 
-                value={newAssunto} 
-                onChange={(e) => setNewAssunto(e.target.value)} 
+              <Input
+                placeholder="Nome do Assunto"
+                value={newAssunto}
+                onChange={(e) => setNewAssunto(e.target.value)}
               />
+              <Select
+                placeholder="Série / Ano (opcional)"
+                value={newAssuntoSerie}
+                onChange={(e) => setNewAssuntoSerie(e.target.value)}
+              >
+                {SERIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+              </Select>
               <Button w="full" colorScheme="blue" onClick={onAddAssunto}>Vincular Assunto</Button>
 
               {materiaParaAssunto && (
@@ -211,12 +237,13 @@ export function AdminPanel({
                         <Thead bg="gray.50">
                           <Tr>
                             <Th>Assunto</Th>
+                            <Th>Série</Th>
                             <Th width="80px" textAlign="right">Ações</Th>
                           </Tr>
                         </Thead>
                         <Tbody>
                           {assuntosAdminList.length === 0 ? (
-                            <Tr><Td colSpan={2} textAlign="center" py={4} color="gray.400">Sem assuntos vinculados</Td></Tr>
+                            <Tr><Td colSpan={3} textAlign="center" py={4} color="gray.400">Sem assuntos vinculados</Td></Tr>
                           ) : (
                             assuntosAdminList
                               .filter(a => a.nome.toLowerCase().includes(adminAssuntoSearch.toLowerCase()))
@@ -224,6 +251,11 @@ export function AdminPanel({
                               .map(a => (
                                 <Tr key={a.id} _hover={{ bg: "gray.50" }}>
                                   <Td fontWeight="medium">{a.nome}</Td>
+                                  <Td>
+                                    {a.serie
+                                      ? <Badge colorScheme="teal" borderRadius="md">{a.serie}</Badge>
+                                      : <Text color="gray.300" fontSize="xs">—</Text>}
+                                  </Td>
                                   <Td textAlign="right">
                                     <HStack justify="flex-end" spacing={1}>
                                       <IconButton size="xs" icon={<Edit3 size={14} />} colorScheme="blue" variant="ghost" onClick={() => onEdit(a, 'assunto')} />

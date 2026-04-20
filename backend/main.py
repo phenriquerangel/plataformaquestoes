@@ -14,6 +14,8 @@ with engine.connect() as conn:
     conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS diagrama JSONB"))
     conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS tipo VARCHAR DEFAULT 'multipla_escolha'"))
     conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS professor_id INTEGER REFERENCES usuarios(id)"))
+    conn.execute(text("ALTER TABLE materias ADD COLUMN IF NOT EXISTS serie VARCHAR"))
+    conn.execute(text("ALTER TABLE assuntos ADD COLUMN IF NOT EXISTS serie VARCHAR"))
     conn.commit()
 
 app = FastAPI(

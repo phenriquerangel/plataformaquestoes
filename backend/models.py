@@ -14,6 +14,7 @@ class MateriaDB(Base):
     __tablename__ = "materias"
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, unique=True, index=True)
+    serie = Column(String, nullable=True)
     assuntos = relationship("AssuntoDB", back_populates="materia", cascade="all, delete-orphan")
 
 
@@ -22,6 +23,7 @@ class AssuntoDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String)
     materia_id = Column(Integer, ForeignKey("materias.id"))
+    serie = Column(String, nullable=True)
     materia = relationship("MateriaDB", back_populates="assuntos")
     questoes = relationship("QuestaoGeradaDB", cascade="all, delete-orphan")
 
@@ -88,11 +90,13 @@ class UsuarioDB(Base):
 
 class MateriaCreate(BaseModel):
     nome: str = Field(..., min_length=2, max_length=50)
+    serie: Optional[str] = None
 
 
 class AssuntoCreate(BaseModel):
     nome: str = Field(..., min_length=2, max_length=100)
     materia_id: int
+    serie: Optional[str] = None
 
 
 class GenerateRequest(BaseModel):

@@ -50,6 +50,7 @@ build_images() {
 
 apply_manifests() {
     echo "Aplicando manifestos Kubernetes..."
+    kubectl apply -f k8s/secrets.yaml
     kubectl apply -f k8s/postgres-deploy.yaml &
     kubectl apply -f k8s/backend-deploy.yaml &
     kubectl apply -f k8s/pdf-renderer-deploy.yaml &

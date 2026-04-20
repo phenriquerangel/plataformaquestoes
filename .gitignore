@@ -1,0 +1,7 @@
+k8s/secrets.yaml
+*.env
+.env*
+__pycache__/
+*.pyc
+node_modules/
+dist/

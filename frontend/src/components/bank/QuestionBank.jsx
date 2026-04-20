@@ -1,15 +1,16 @@
 import React from 'react';
 import {
   Card, CardBody, Stack, Select, SimpleGrid, FormControl,
-  Input, HStack, Button, Flex, Text,
+  Input, HStack, Button, Flex, Text, FormLabel,
 } from '@chakra-ui/react';
 import { Search, Plus } from 'lucide-react';
+import { SERIES_OPTIONS } from '../../constants/series';
 import { AssuntoSelector } from '../shared/AssuntoSelector';
 import { QuestionList } from '../shared/QuestionList';
 import { PAGE_LIMIT } from '../../hooks/useQuestionBank';
 
 export function QuestionBank({
-  materiasList, materia, onMateriaChange,
+  materiasList, selectedSerie, onSerieChange, materia, onMateriaChange,
   filteredAssuntos, selectedAssuntos, subjectSearch, onSearchChange, onToggleAssunto,
   keywordSearch, setKeywordSearch,
   idSearch, setIdSearch,
@@ -17,16 +18,26 @@ export function QuestionBank({
   sortOrder, setSortOrder,
   questions, loading, totalQuestions, offset,
   onSearch, onResetFilters, onDeleteQuestion, onToggleInList, onAddAll, customList,
+  listas, onAddToLista, onCreateAndAdd,
 }) {
   return (
     <>
       <Card borderRadius="2xl" mb={8}>
         <CardBody>
           <Stack spacing={4}>
-            <Select placeholder="Filtrar por Matéria" value={materia} onChange={onMateriaChange}>
-              {materiasList.map(m => <option key={m.id} value={m.nome}>{m.nome}</option>)}
-            </Select>
-            <SimpleGrid columns={{ base: 1, md: 2, lg: 5 }} spacing={4}>
+            <HStack spacing={4}>
+              <FormControl flex={1}>
+                <Select placeholder="Filtrar por Série" value={selectedSerie} onChange={onSerieChange}>
+                  {SERIES_OPTIONS.map(s => <option key={s} value={s}>{s}</option>)}
+                </Select>
+              </FormControl>
+              <FormControl flex={1}>
+                <Select placeholder="Filtrar por Matéria" value={materia} onChange={onMateriaChange}>
+                  {materiasList.map(m => <option key={m.id} value={m.nome}>{m.nome}</option>)}
+                </Select>
+              </FormControl>
+            </HStack>
+            <SimpleGrid columns={{ base: 1, sm: 2, lg: 5 }} spacing={4}>
               <FormControl>
                 <AssuntoSelector
                   selectedAssuntos={selectedAssuntos}
@@ -75,7 +86,7 @@ export function QuestionBank({
           <HStack spacing={4}>
             <Text fontSize="xs" color="gray.500" fontWeight="bold">{totalQuestions} ENCONTRADAS</Text>
             <Button size="xs" colorScheme="brand" variant="ghost" onClick={onAddAll} leftIcon={<Plus size={14} />}>
-              Adicionar todas à lista
+              Adicionar todas à lista temporária
             </Button>
           </HStack>
           <HStack spacing={2}>
@@ -94,6 +105,9 @@ export function QuestionBank({
         customList={customList}
         highlight={keywordSearch}
         loading={loading}
+        listas={listas}
+        onAddToLista={onAddToLista}
+        onCreateAndAdd={onCreateAndAdd}
       />
     </>
   );

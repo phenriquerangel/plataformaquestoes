@@ -17,7 +17,7 @@ def listar_assuntos(materia_id: int, db: Session = Depends(get_db), _=Depends(ge
 @router.post("")
 def criar_assunto(assunto: AssuntoCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     try:
-        db_assunto = AssuntoDB(nome=assunto.nome, materia_id=assunto.materia_id)
+        db_assunto = AssuntoDB(nome=assunto.nome, materia_id=assunto.materia_id, serie=assunto.serie)
         db.add(db_assunto)
         db.commit()
         db.refresh(db_assunto)
@@ -36,6 +36,7 @@ def editar_assunto(assunto_id: int, assunto: AssuntoCreate, db: Session = Depend
     try:
         db_assunto.nome = assunto.nome
         db_assunto.materia_id = assunto.materia_id
+        db_assunto.serie = assunto.serie
         db.commit()
         db.refresh(db_assunto)
         return db_assunto

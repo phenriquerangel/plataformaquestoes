@@ -4,8 +4,10 @@ import {
   Input, Spinner, Tag, Text, VStack, useDisclosure,
   AlertDialog, AlertDialogBody, AlertDialogFooter, AlertDialogHeader,
   AlertDialogContent, AlertDialogOverlay,
+  useColorModeValue,
 } from '@chakra-ui/react';
 import { BookOpen, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { ListaDetail } from './ListaDetail';
 
 const STATUS_COLORS = {
   rascunho: 'gray',
@@ -21,6 +23,13 @@ function ListaCard({ lista, onDelete, onRename, onOpen }) {
   const [editing, setEditing] = useState(false);
   const [nome, setNome] = useState(lista.nome);
 
+  const cardBg = useColorModeValue('white', 'gray.800');
+  const borderColor = useColorModeValue('gray.100', 'gray.700');
+  const hoverShadow = useColorModeValue('md', 'dark-lg');
+  const iconBg = useColorModeValue('brand.50', 'brand.900');
+  const titleColor = useColorModeValue('gray.800', 'gray.100');
+  const subtleColor = useColorModeValue('gray.400', 'gray.500');
+
   const handleSave = () => {
     if (nome.trim() && nome !== lista.nome) onRename(lista.id, nome.trim());
     setEditing(false);
@@ -32,11 +41,19 @@ function ListaCard({ lista, onDelete, onRename, onOpen }) {
   };
 
   return (
-    <Card borderRadius="xl" border="1px" borderColor="gray.100" shadow="sm" _hover={{ shadow: 'md' }} transition="all 0.15s">
+    <Card
+      borderRadius="xl"
+      border="1px"
+      borderColor={borderColor}
+      shadow="sm"
+      bg={cardBg}
+      _hover={{ shadow: hoverShadow, transform: 'translateY(-1px)' }}
+      transition="all 0.15s"
+    >
       <CardBody>
         <Flex align="center" justify="space-between" gap={3}>
           <Flex align="center" gap={3} flex={1} minW={0}>
-            <Box bg="brand.50" p={2} borderRadius="lg" flexShrink={0}>
+            <Box bg={iconBg} p={2} borderRadius="lg" flexShrink={0}>
               <BookOpen size={18} color="var(--chakra-colors-brand-600)" />
             </Box>
             <Box flex={1} minW={0}>
@@ -54,13 +71,13 @@ function ListaCard({ lista, onDelete, onRename, onOpen }) {
                   <IconButton icon={<X size={14} />} size="xs" variant="ghost" onClick={() => { setNome(lista.nome); setEditing(false); }} aria-label="Cancelar" />
                 </HStack>
               ) : (
-                <Text fontWeight="semibold" fontSize="sm" noOfLines={1}>{lista.nome}</Text>
+                <Text fontWeight="semibold" fontSize="sm" noOfLines={1} color={titleColor}>{lista.nome}</Text>
               )}
               <HStack mt={1} spacing={2}>
                 <Tag size="sm" colorScheme={STATUS_COLORS[lista.status] || 'gray'} borderRadius="full">
                   {STATUS_LABELS[lista.status] || lista.status}
                 </Tag>
-                <Text fontSize="xs" color="gray.400">{lista.total_questoes} questão{lista.total_questoes !== 1 ? 'ões' : ''}</Text>
+                <Text fontSize="xs" color={subtleColor}>{lista.total_questoes} questão{lista.total_questoes !== 1 ? 'ões' : ''}</Text>
               </HStack>
             </Box>
           </Flex>
@@ -79,11 +96,17 @@ function ListaCard({ lista, onDelete, onRename, onOpen }) {
   );
 }
 
-export function MinhasListas({ listas, loading, onFetch, onCreate, onDelete, onRename, onOpenLista }) {
+export function MinhasListas({
+  listas, loading, onFetch, onCreate, onDelete, onRename,
+  fetchListaQuestoes, onRemoveQuestaoFromLista, onUpdateLista, onExportPDF,
+}) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = React.useRef();
   const [listaParaExcluir, setListaParaExcluir] = useState(null);
   const [novaLista, setNovaLista] = useState('');
+  const [selectedLista, setSelectedLista] = useState(null);
+
+  const emptyColor = useColorModeValue('gray.400', 'gray.500');
 
   useEffect(() => { onFetch(); }, [onFetch]);
 
@@ -93,7 +116,10 @@ export function MinhasListas({ listas, loading, onFetch, onCreate, onDelete, onR
   };
 
   const confirmDelete = () => {
-    if (listaParaExcluir) onDelete(listaParaExcluir.id);
+    if (listaParaExcluir) {
+      onDelete(listaParaExcluir.id);
+      if (selectedLista?.id === listaParaExcluir.id) setSelectedLista(null);
+    }
     onClose();
   };
 
@@ -102,6 +128,19 @@ export function MinhasListas({ listas, loading, onFetch, onCreate, onDelete, onR
     onCreate(nome);
     setNovaLista('');
   };
+
+  if (selectedLista) {
+    return (
+      <ListaDetail
+        lista={selectedLista}
+        onBack={() => setSelectedLista(null)}
+        fetchQuestoes={fetchListaQuestoes}
+        onRemoveQuestao={onRemoveQuestaoFromLista}
+        onUpdateStatus={onUpdateLista}
+        onExportPDF={onExportPDF}
+      />
+    );
+  }
 
   return (
     <Box>
@@ -126,7 +165,7 @@ export function MinhasListas({ listas, loading, onFetch, onCreate, onDelete, onR
       {loading ? (
         <Flex justify="center" py={12}><Spinner color="brand.500" /></Flex>
       ) : listas.length === 0 ? (
-        <Flex direction="column" align="center" py={16} gap={3} color="gray.400">
+        <Flex direction="column" align="center" py={16} gap={3} color={emptyColor}>
           <BookOpen size={40} />
           <Text>Nenhuma lista salva ainda.</Text>
           <Text fontSize="sm">Crie uma lista e adicione questões do banco ou do gerador.</Text>
@@ -139,7 +178,7 @@ export function MinhasListas({ listas, loading, onFetch, onCreate, onDelete, onR
               lista={lista}
               onDelete={handleDelete}
               onRename={onRename}
-              onOpen={onOpenLista}
+              onOpen={setSelectedLista}
             />
           ))}
         </VStack>
