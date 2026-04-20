@@ -16,6 +16,7 @@ with engine.connect() as conn:
     conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS professor_id INTEGER REFERENCES usuarios(id)"))
     conn.execute(text("ALTER TABLE materias ADD COLUMN IF NOT EXISTS serie VARCHAR"))
     conn.execute(text("ALTER TABLE assuntos ADD COLUMN IF NOT EXISTS serie VARCHAR"))
+    conn.execute(text("ALTER TABLE assuntos ADD COLUMN IF NOT EXISTS serie_id INTEGER REFERENCES series(id)"))
     conn.commit()
 
 app = FastAPI(

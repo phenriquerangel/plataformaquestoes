@@ -10,6 +10,14 @@ from database import Base
 
 # --- SQLAlchemy Models ---
 
+class SerieDB(Base):
+    __tablename__ = "series"
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, unique=True, nullable=False)
+    ordem = Column(Integer, nullable=False)
+    assuntos = relationship("AssuntoDB", back_populates="serie")
+
+
 class MateriaDB(Base):
     __tablename__ = "materias"
     id = Column(Integer, primary_key=True, index=True)
@@ -24,7 +32,9 @@ class AssuntoDB(Base):
     nome = Column(String)
     materia_id = Column(Integer, ForeignKey("materias.id"))
     serie = Column(String, nullable=True)
+    serie_id = Column(Integer, ForeignKey("series.id"), nullable=True, index=True)
     materia = relationship("MateriaDB", back_populates="assuntos")
+    serie_rel = relationship("SerieDB", back_populates="assuntos")
     questoes = relationship("QuestaoGeradaDB", cascade="all, delete-orphan")
 
 
