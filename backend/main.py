@@ -6,12 +6,14 @@ from sqlalchemy import text
 
 from database import Base, SessionLocal, engine
 from models import AssuntoDB, MateriaDB, UsuarioDB
-from routers import admin, assuntos, auth, materias, questoes, usuarios
+from routers import admin, assuntos, auth, listas, materias, questoes, usuarios
 
 Base.metadata.create_all(bind=engine)
 
 with engine.connect() as conn:
     conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS diagrama JSONB"))
+    conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS tipo VARCHAR DEFAULT 'multipla_escolha'"))
+    conn.execute(text("ALTER TABLE questoes_geradas ADD COLUMN IF NOT EXISTS professor_id INTEGER REFERENCES usuarios(id)"))
     conn.commit()
 
 app = FastAPI(
@@ -34,6 +36,7 @@ app.include_router(auth.router)
 app.include_router(materias.router)
 app.include_router(assuntos.router)
 app.include_router(questoes.router)
+app.include_router(listas.router)
 app.include_router(admin.router)
 app.include_router(usuarios.router)
 

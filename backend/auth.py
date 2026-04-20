@@ -49,9 +49,21 @@ def get_current_user(authorization: str = Header(None)) -> dict:
         raise HTTPException(status_code=401, detail="Token ausente")
     try:
         payload = jwt.decode(authorization[7:], SECRET_KEY, algorithms=[ALGORITHM])
-        return {"username": payload["sub"], "role": payload["role"]}
+        username = payload["sub"]
+        role = payload["role"]
     except JWTError:
         raise HTTPException(status_code=401, detail="Token inválido ou expirado")
+
+    from database import SessionLocal
+    from models import UsuarioDB
+    db = SessionLocal()
+    try:
+        user = db.query(UsuarioDB).filter(UsuarioDB.username == username).first()
+        if not user:
+            raise HTTPException(status_code=401, detail="Usuário não encontrado")
+        return {"id": user.id, "username": username, "role": role}
+    finally:
+        db.close()
 
 
 def require_admin(user: dict = Depends(get_current_user)) -> dict:

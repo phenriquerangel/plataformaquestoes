@@ -34,9 +34,35 @@ class QuestaoGeradaDB(Base):
     resposta_correta = Column(String)
     explicacao = Column(JSONB)
     dificuldade = Column(String)
+    tipo = Column(String, nullable=True, default="multipla_escolha")
     assunto_id = Column(Integer, ForeignKey("assuntos.id"))
+    professor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
     diagrama_svg = Column(String, nullable=True)
     diagrama = Column(JSONB, nullable=True)
+
+
+class ListaDB(Base):
+    __tablename__ = "listas"
+    id = Column(Integer, primary_key=True, index=True)
+    nome = Column(String, nullable=False)
+    status = Column(String, nullable=False, default="rascunho")
+    professor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
+    questoes = relationship(
+        "ListaQuestaoAssociation",
+        back_populates="lista",
+        cascade="all, delete-orphan",
+        order_by="ListaQuestaoAssociation.ordem",
+    )
+
+
+class ListaQuestaoAssociation(Base):
+    __tablename__ = "lista_questoes"
+    lista_id = Column(Integer, ForeignKey("listas.id"), primary_key=True)
+    questao_id = Column(Integer, ForeignKey("questoes_geradas.id"), primary_key=True)
+    ordem = Column(Integer, default=0)
+    lista = relationship("ListaDB", back_populates="questoes")
+    questao = relationship("QuestaoGeradaDB")
 
 
 class EventoLogDB(Base):
@@ -75,6 +101,7 @@ class GenerateRequest(BaseModel):
     assunto_id: int
     dificuldade: str
     quantidade: int = Field(3, ge=1, le=10)
+    tipo: str = "multipla_escolha"
 
 
 class TextPart(BaseModel):
@@ -91,6 +118,7 @@ class Question(BaseModel):
     resposta_correta: str
     explicacao: Union[List[TextPart], str]
     dificuldade: str = None
+    tipo: Optional[str] = "multipla_escolha"
 
 
 class QuestionListResponse(BaseModel):
@@ -122,3 +150,27 @@ class UsuarioUpdate(BaseModel):
 class PdfRequest(BaseModel):
     data: List[Question]
     title: str
+
+
+class ListaCreate(BaseModel):
+    nome: str = Field(..., min_length=1, max_length=200)
+
+
+class ListaUpdate(BaseModel):
+    nome: Optional[str] = Field(None, min_length=1, max_length=200)
+    status: Optional[str] = None
+
+
+class ListaQuestaoAdd(BaseModel):
+    questao_id: int
+
+
+class ListaResponse(BaseModel):
+    id: int
+    nome: str
+    status: str
+    professor_id: int
+    total_questoes: int
+
+    class Config:
+        from_attributes = True

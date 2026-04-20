@@ -5,15 +5,16 @@ import {
   Popover, PopoverTrigger, PopoverContent, PopoverBody, PopoverArrow,
   useDisclosure, Spinner, Divider,
 } from '@chakra-ui/react';
-import { BrainCircuit, BarChart2, Sparkles, Database, Settings, Menu, RefreshCw, ClipboardList, LogOut } from 'lucide-react';
+import { BrainCircuit, BarChart2, Sparkles, Database, Settings, Menu, RefreshCw, ClipboardList, LogOut, BookOpen } from 'lucide-react';
 import { useHealthCheck } from '../../hooks/useHealthCheck';
 
 const NAV_ITEMS = [
-  { id: 'dashboard', label: 'Dashboard', icon: BarChart2,  adminOnly: true },
-  { id: 'generator', label: 'Gerador',   icon: Sparkles,   adminOnly: false },
-  { id: 'bank',      label: 'Banco',     icon: Database,   adminOnly: false },
-  { id: 'admin',     label: 'Admin',     icon: Settings,   adminOnly: true },
-  { id: 'logs',      label: 'Logs',      icon: ClipboardList, adminOnly: true },
+  { id: 'dashboard', label: 'Dashboard',     icon: BarChart2,     adminOnly: true },
+  { id: 'generator', label: 'Gerador',       icon: Sparkles,      adminOnly: false },
+  { id: 'bank',      label: 'Banco',         icon: Database,      adminOnly: false },
+  { id: 'listas',    label: 'Minhas Listas', icon: BookOpen,      adminOnly: false },
+  { id: 'admin',     label: 'Admin',         icon: Settings,      adminOnly: true },
+  { id: 'logs',      label: 'Logs',          icon: ClipboardList, adminOnly: true },
 ];
 
 const STATUS_COLOR = { ok: 'green.400', degraded: 'yellow.400', error: 'red.400', not_configured: 'yellow.400' };

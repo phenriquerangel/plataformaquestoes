@@ -8,6 +8,7 @@ import { useDeleteDialog } from './hooks/useDeleteDialog';
 import { useEditModal } from './hooks/useEditModal';
 import { useQuestionGenerator } from './hooks/useQuestionGenerator';
 import { useQuestionBank } from './hooks/useQuestionBank';
+import { useListas } from './hooks/useListas';
 import { QuestionGenerator } from './components/generator/QuestionGenerator';
 import { QuestionBank } from './components/bank/QuestionBank';
 import { CustomList } from './components/shared/CustomList';
@@ -17,6 +18,7 @@ import { AdminPanel } from './components/admin/AdminPanel';
 import { Dashboard } from './components/dashboard/Dashboard';
 import { LogsPage } from './components/logs/LogsPage';
 import { LoginPage } from './components/auth/LoginPage';
+import { MinhasListas } from './components/listas/MinhasListas';
 import { Sidebar, MobileTopBar } from './components/layout/Sidebar';
 import { useAuth } from './hooks/useAuth';
 import { apiClient, apiDownload } from './api';
@@ -33,6 +35,7 @@ function App() {
   const [materia, setMateria] = useState('Geral');
   const [difficulty, setDifficulty] = useState('Media');
   const [quantity, setQuantity] = useState(5);
+  const [tipo, setTipo] = useState('multipla_escolha');
   const [materiaParaAssunto, setMateriaParaAssunto] = useState('');
   const [newMateria, setNewMateria] = useState('');
   const [newAssunto, setNewAssunto] = useState('');
@@ -52,6 +55,7 @@ function App() {
   const editModal = useEditModal();
   const generator = useQuestionGenerator();
   const bank = useQuestionBank();
+  const listas = useListas();
 
   const fetchAdminStats = async () => {
     try {
@@ -146,12 +150,9 @@ function App() {
   return (
     <MathJaxContext config={mathJaxConfig}>
       <Box display="flex" minH="100vh" bg="gray.50">
-        {/* Sidebar desktop */}
         <Sidebar activePage={activePage} onNavigate={handleNavigate} isAdmin={isAdmin} username={username} onLogout={logout} />
 
-        {/* Conteúdo principal */}
         <Box flex="1" ml={{ base: 0, md: '220px' }} display="flex" flexDirection="column">
-          {/* Top bar mobile */}
           <MobileTopBar activePage={activePage} onNavigate={handleNavigate} isAdmin={isAdmin} username={username} onLogout={logout} />
 
           <Container maxW="container.lg" py={8} px={{ base: 4, md: 8 }}>
@@ -163,6 +164,7 @@ function App() {
               onMove={moveQuestion}
               onClear={clear}
               onExport={() => handleExportPDF(customList, customListTitle)}
+              onSaveToListas={listas.saveCurrentListAs}
             />
 
             {activePage === 'dashboard' && (
@@ -183,9 +185,11 @@ function App() {
                 setDifficulty={setDifficulty}
                 quantity={quantity}
                 setQuantity={setQuantity}
+                tipo={tipo}
+                setTipo={setTipo}
                 questions={generator.questions}
                 loading={generator.loading}
-                onGenerate={() => generator.generate({ materia, selectedAssuntos, difficulty, quantity })}
+                onGenerate={() => generator.generate({ materia, selectedAssuntos, difficulty, quantity, tipo })}
                 onExport={() => handleExportPDF(generator.questions, 'AVALIAÇÃO DE DESEMPENHO')}
                 onDeleteQuestion={generator.deleteQuestion}
                 onAddToList={toggleQuestion}
@@ -221,6 +225,20 @@ function App() {
                 onToggleInList={toggleQuestion}
                 onAddAll={() => addAll(bank.questions)}
                 customList={customList}
+              />
+            )}
+
+            {activePage === 'listas' && (
+              <MinhasListas
+                listas={listas.listas}
+                loading={listas.loading}
+                onFetch={listas.fetchListas}
+                onCreate={listas.createLista}
+                onDelete={listas.deleteLista}
+                onRename={(id, nome) => listas.updateLista(id, { nome })}
+                onOpenLista={(lista) => {
+                  toast({ title: `Lista "${lista.nome}" — publicação disponível em breve`, status: 'info', duration: 2500 });
+                }}
               />
             )}
 

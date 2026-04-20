@@ -12,6 +12,7 @@ export function QuestionGenerator({
   selectedAssuntos, filteredAssuntos, subjectSearch, onSearchChange, onToggleAssunto,
   difficulty, setDifficulty,
   quantity, setQuantity,
+  tipo, setTipo,
   questions, loading,
   onGenerate, onExport,
   onDeleteQuestion, onAddToList, customList,
@@ -41,6 +42,15 @@ export function QuestionGenerator({
                 onToggle={onToggleAssunto}
                 disabled={!materia || materia === 'Geral'}
               />
+            </FormControl>
+            <FormControl>
+              <FormLabel fontSize="xs" textTransform="uppercase" fontWeight="bold">Tipo</FormLabel>
+              <Select value={tipo} onChange={(e) => setTipo(e.target.value)} borderRadius="lg">
+                <option value="multipla_escolha">Múltipla Escolha</option>
+                <option value="verdadeiro_falso">Verdadeiro / Falso</option>
+                <option value="dissertativa">Dissertativa</option>
+                <option value="misto">Misto</option>
+              </Select>
             </FormControl>
             <FormControl>
               <FormLabel fontSize="xs" textTransform="uppercase" fontWeight="bold">Nível</FormLabel>

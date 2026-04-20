@@ -33,11 +33,11 @@ _model = genai.GenerativeModel(
     },
 )
 
-_PROMPT_TEMPLATE = """Gere {quantidade} questões de múltipla escolha sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+_PROMPT_MULTIPLA_ESCOLHA = """Gere {quantidade} questões de múltipla escolha sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
 
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
-2. **ESQUEMA DE CADA OBJETO**: {{"diagrama": null, "enunciado": [...], "alternativas": [...], "resposta_correta": "...", "explicacao": [...]}}
+2. **ESQUEMA DE CADA OBJETO**: {{"tipo": "multipla_escolha", "diagrama": null, "enunciado": [...], "alternativas": [...], "resposta_correta": "...", "explicacao": [...]}}
 3. **CAMPO `diagrama`**: Se a questão envolver figura geométrica (triângulos, círculos, quadriláteros, etc.), gere um objeto com "viewBox" e "elementos". Caso contrário use null. Tipos de elementos:
    - {{"tipo": "poligono", "pontos": [[x,y],...], "preenchimento": "#eff6ff", "borda": "#2563eb"}}
    - {{"tipo": "circulo", "cx": x, "cy": y, "r": r, "preenchimento": "#eff6ff", "borda": "#2563eb"}}
@@ -46,26 +46,71 @@ REGRAS DE FORMATAÇÃO (siga à risca):
    - {{"tipo": "texto", "x": x, "y": y, "conteudo": "...", "ancora": "start|middle|end"}}
    Coordenadas: Y cresce para baixo. Use viewBox "0 0 220 180" como padrão, com margem de 20px.
 4. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. NUNCA uma string. No type `latex`, coloque APENAS o código LaTeX sem delimitadores `$`.
-5. **CAMPO `alternativas`**: Lista de strings simples sem prefixos "A)". Para matemática inline use `[math]...[/math]`.
-6. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, sem repetição.
+5. **CAMPO `alternativas`**: Lista de 5 strings simples sem prefixos "A)". Para matemática inline use `[math]...[/math]`.
+6. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, sem repetição."""
 
-EXEMPLO com diagrama (triângulo retângulo ABC, catetos AB=6 e BC=8):
-{{"diagrama": {{"viewBox": "0 0 220 190", "elementos": [{{"tipo": "poligono", "pontos": [[30,160],[30,30],[180,160]], "preenchimento": "#eff6ff", "borda": "#2563eb"}}, {{"tipo": "angulo_reto", "vertice": [30,160], "v1": [30,30], "v2": [180,160]}}, {{"tipo": "texto", "x": 30, "y": 22, "conteudo": "A", "ancora": "middle"}}, {{"tipo": "texto", "x": 20, "y": 175, "conteudo": "B", "ancora": "middle"}}, {{"tipo": "texto", "x": 190, "y": 175, "conteudo": "C", "ancora": "middle"}}, {{"tipo": "texto", "x": 12, "y": 98, "conteudo": "6", "ancora": "end"}}, {{"tipo": "texto", "x": 105, "y": 178, "conteudo": "8", "ancora": "middle"}}]}}, "enunciado": [{{"type": "text", "content": "No triângulo retângulo ABC, com catetos AB = 6 e BC = 8, qual é o seno do ângulo C?"}}], "alternativas": ["[math]\\\\frac{{3}}{{5}}[/math]", "[math]\\\\frac{{4}}{{5}}[/math]", "[math]\\\\frac{{3}}{{4}}[/math]", "[math]\\\\frac{{5}}{{3}}[/math]", "[math]\\\\frac{{1}}{{2}}[/math]"], "resposta_correta": "[math]\\\\frac{{3}}{{5}}[/math]", "explicacao": [{{"type": "text", "content": "A hipotenusa é AC = 10. O seno de C é cateto oposto sobre hipotenusa: "}}, {{"type": "latex", "content": "\\\\sin C = \\\\frac{{6}}{{10}} = \\\\frac{{3}}{{5}}"}}]}}"""
+_PROMPT_VERDADEIRO_FALSO = """Gere {quantidade} questões de verdadeiro ou falso sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+
+REGRAS DE FORMATAÇÃO (siga à risca):
+1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
+2. **ESQUEMA DE CADA OBJETO**: {{"tipo": "verdadeiro_falso", "diagrama": null, "enunciado": [...], "alternativas": ["Verdadeiro", "Falso"], "resposta_correta": "Verdadeiro" ou "Falso", "explicacao": [...]}}
+3. **CAMPO `enunciado`**: Uma afirmação que pode ser verdadeira ou falsa. OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+4. **CAMPO `alternativas`**: SEMPRE exatamente ["Verdadeiro", "Falso"].
+5. **CAMPO `resposta_correta`**: SEMPRE "Verdadeiro" ou "Falso".
+6. **CAMPO `explicacao`**: Explicação clara do por quê a afirmação é verdadeira ou falsa. Lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+7. **VARIEDADE**: Misture afirmações verdadeiras e falsas. As {quantidade} questões devem abordar aspectos diferentes do tema."""
+
+_PROMPT_DISSERTATIVA = """Gere {quantidade} questões dissertativas sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+
+REGRAS DE FORMATAÇÃO (siga à risca):
+1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
+2. **ESQUEMA DE CADA OBJETO**: {{"tipo": "dissertativa", "diagrama": null, "enunciado": [...], "alternativas": [], "resposta_correta": "", "explicacao": [...]}}
+3. **CAMPO `enunciado`**: Pergunta ou problema aberto que exige resposta elaborada. OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+4. **CAMPO `alternativas`**: SEMPRE lista vazia [].
+5. **CAMPO `resposta_correta`**: SEMPRE string vazia "".
+6. **CAMPO `explicacao`**: Resposta modelo completa e bem estruturada. Lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+7. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, exigindo análise, síntese ou argumentação."""
+
+_PROMPT_MISTO = """Gere {quantidade} questões MISTAS (variando entre múltipla escolha, verdadeiro/falso e dissertativa) sobre o Tema '{assunto}' (Matéria: {materia}) com dificuldade '{dificuldade}'.
+
+REGRAS DE FORMATAÇÃO (siga à risca):
+1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
+2. **TIPOS**: Distribua entre "multipla_escolha", "verdadeiro_falso" e "dissertativa". Ao menos um de cada tipo se {quantidade} >= 3.
+3. **ESQUEMA BASE**: {{"tipo": "...", "diagrama": null, "enunciado": [...], "alternativas": [...], "resposta_correta": "...", "explicacao": [...]}}
+4. **Para múltipla escolha**: alternativas = lista de 5 strings; resposta_correta = uma das alternativas.
+5. **Para verdadeiro/falso**: alternativas = ["Verdadeiro", "Falso"]; resposta_correta = "Verdadeiro" ou "Falso".
+6. **Para dissertativa**: alternativas = []; resposta_correta = ""; explicacao = resposta modelo.
+7. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+8. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema."""
+
+_PROMPTS = {
+    "multipla_escolha": _PROMPT_MULTIPLA_ESCOLHA,
+    "verdadeiro_falso": _PROMPT_VERDADEIRO_FALSO,
+    "dissertativa": _PROMPT_DISSERTATIVA,
+    "misto": _PROMPT_MISTO,
+}
 
 
 def _clean_q_data(q_data: dict) -> dict | None:
     if "pergunta" in q_data and "enunciado" not in q_data:
         q_data["enunciado"] = q_data.pop("pergunta")
 
+    tipo = q_data.get("tipo", "multipla_escolha")
+
     alts = q_data.get("alternativas", [])
     if isinstance(alts, dict):
         alts = [v for _, v in sorted(alts.items())]
 
-    cleaned_alts = []
-    for alt in (alts if isinstance(alts, list) else []):
-        text = alt.get('texto', alt.get('text', alt.get('content', str(alt)))) if isinstance(alt, dict) else str(alt or "")
-        cleaned_alts.append(re.sub(r'^([a-zA-Z][\)\.]\s*)+', '', text).lstrip())
-    q_data["alternativas"] = cleaned_alts
+    if tipo == "dissertativa":
+        q_data["alternativas"] = []
+        if not q_data.get("resposta_correta"):
+            q_data["resposta_correta"] = ""
+    else:
+        cleaned_alts = []
+        for alt in (alts if isinstance(alts, list) else []):
+            text = alt.get('texto', alt.get('text', alt.get('content', str(alt)))) if isinstance(alt, dict) else str(alt or "")
+            cleaned_alts.append(re.sub(r'^([a-zA-Z][\)\.]\s*)+', '', text).lstrip())
+        q_data["alternativas"] = cleaned_alts
 
     if not all(k in q_data for k in ["enunciado", "alternativas", "resposta_correta", "explicacao"]):
         print(f"Questão ignorada por falta de campos: {list(q_data.keys())}")
@@ -78,8 +123,9 @@ def _clean_q_data(q_data: dict) -> dict | None:
     return q_data
 
 
-async def generate_and_stream(request: GenerateRequest, db):
-    prompt = _PROMPT_TEMPLATE.format(
+async def generate_and_stream(request: GenerateRequest, db, professor_id: int = None):
+    template = _PROMPTS.get(request.tipo, _PROMPT_MULTIPLA_ESCOLHA)
+    prompt = template.format(
         assunto=request.assunto,
         materia=request.materia,
         dificuldade=request.dificuldade,
@@ -125,13 +171,19 @@ async def generate_and_stream(request: GenerateRequest, db):
             if not isinstance(diagrama, dict):
                 diagrama = None
 
+            tipo_questao = q_data.get("tipo", request.tipo)
+            if request.tipo != "misto":
+                tipo_questao = request.tipo
+
             nova = QuestaoGeradaDB(
                 enunciado=q_data.get("enunciado", []),
                 alternativas=q_data.get("alternativas", []),
                 resposta_correta=q_data.get("resposta_correta", ""),
                 explicacao=q_data.get("explicacao", []),
                 dificuldade=request.dificuldade,
+                tipo=tipo_questao,
                 assunto_id=request.assunto_id,
+                professor_id=professor_id,
                 diagrama=diagrama,
             )
             db.add(nova)
@@ -145,18 +197,21 @@ async def generate_and_stream(request: GenerateRequest, db):
                 resposta_correta=nova.resposta_correta,
                 explicacao=nova.explicacao,
                 dificuldade=nova.dificuldade,
+                tipo=nova.tipo,
             ).dict()) + "\n"
 
         await asyncio.to_thread(db.commit)
         await registrar_evento_async(
             "geracao",
-            f"Geração concluída: {request.materia} / {request.assunto} ({request.dificuldade})",
+            f"Geração concluída: {request.materia} / {request.assunto} ({request.dificuldade}, {request.tipo})",
             {
                 "materia": request.materia,
                 "assunto": request.assunto,
                 "assunto_id": request.assunto_id,
                 "dificuldade": request.dificuldade,
                 "quantidade": request.quantidade,
+                "tipo": request.tipo,
+                "professor_id": professor_id,
             },
         )
     except Exception as e:

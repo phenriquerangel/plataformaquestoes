@@ -22,13 +22,18 @@ def listar_questoes_salvas(
     questao_id: int = Query(None),
     keyword: str = Query(None),
     dificuldade: str = Query(None),
+    tipo: str = Query(None),
     limit: int = Query(QUERY_DEFAULT_LIMIT),
     offset: int = Query(0),
     ordem: str = Query("desc"),
     db: Session = Depends(get_db),
-    _=Depends(get_current_user),
+    current_user=Depends(get_current_user),
 ):
     query = db.query(QuestaoGeradaDB)
+
+    # Professores veem apenas suas próprias questões; admins veem tudo
+    if current_user["role"] != "admin":
+        query = query.filter(QuestaoGeradaDB.professor_id == current_user["id"])
 
     if questao_id:
         query = query.filter(QuestaoGeradaDB.id == questao_id)
@@ -42,6 +47,8 @@ def listar_questoes_salvas(
             )
         if dificuldade:
             query = query.filter(QuestaoGeradaDB.dificuldade == dificuldade)
+        if tipo:
+            query = query.filter(QuestaoGeradaDB.tipo == tipo)
 
     total = query.count()
     query = query.order_by(
@@ -67,9 +74,10 @@ def listar_questoes_salvas(
                 enunciado=q.enunciado,
                 diagrama_svg=q.diagrama_svg,
                 alternativas=alts,
-                resposta_correta=q.resposta_correta or "Não informada",
+                resposta_correta=q.resposta_correta or "",
                 explicacao=q.explicacao,
                 dificuldade=q.dificuldade,
+                tipo=q.tipo or "multipla_escolha",
             )
         )
 
@@ -90,10 +98,13 @@ def atualizar_questao(questao_id: int, body: QuestionUpdate, db: Session = Depen
 
 
 @router.delete("/questoes/{questao_id}")
-def excluir_questao(questao_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
+def excluir_questao(questao_id: int, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     questao = db.query(QuestaoGeradaDB).filter(QuestaoGeradaDB.id == questao_id).first()
     if not questao:
         raise HTTPException(status_code=404, detail="Questão não encontrada")
+    # Admins podem excluir qualquer questão; professores apenas as suas
+    if current_user["role"] != "admin" and questao.professor_id != current_user["id"]:
+        raise HTTPException(status_code=403, detail="Acesso negado")
     try:
         assunto_id = questao.assunto_id
         db.delete(questao)
@@ -106,5 +117,8 @@ def excluir_questao(questao_id: int, db: Session = Depends(get_db), _=Depends(re
 
 
 @router.post("/generate")
-async def generate_questions_stream(request: GenerateRequest, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return StreamingResponse(generate_and_stream(request, db), media_type="application/x-ndjson")
+async def generate_questions_stream(request: GenerateRequest, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
+    return StreamingResponse(
+        generate_and_stream(request, db, professor_id=current_user["id"]),
+        media_type="application/x-ndjson",
+    )

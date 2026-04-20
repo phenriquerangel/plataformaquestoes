@@ -3,7 +3,7 @@ import {
   Card, CardBody, Stack, Flex, HStack, Badge, Input,
   Button, Divider, Wrap, Tag, TagLabel, TagCloseButton, IconButton,
 } from '@chakra-ui/react';
-import { Download, ChevronUp, ChevronDown } from 'lucide-react';
+import { Download, ChevronUp, ChevronDown, Save } from 'lucide-react';
 
 const partsToString = (parts) => {
   if (!parts) return '';
@@ -12,8 +12,12 @@ const partsToString = (parts) => {
   return '';
 };
 
-export function CustomList({ customList, customListTitle, setCustomListTitle, onToggle, onMove, onClear, onExport }) {
+export function CustomList({ customList, customListTitle, setCustomListTitle, onToggle, onMove, onClear, onExport, onSaveToListas }) {
   if (customList.length === 0) return null;
+
+  const handleSave = () => {
+    if (onSaveToListas) onSaveToListas(customListTitle || 'Minha Lista', customList);
+  };
 
   return (
     <Card borderRadius="2xl" border="2px" borderColor="brand.500" mb={8} bg="brand.50" shadow="md">
@@ -29,6 +33,11 @@ export function CustomList({ customList, customListTitle, setCustomListTitle, on
             </HStack>
             <HStack spacing={3} w={{ base: 'full', md: 'auto' }} justify="flex-end">
               <Button variant="ghost" colorScheme="red" size="sm" onClick={onClear}>Limpar</Button>
+              {onSaveToListas && (
+                <Button variant="outline" colorScheme="brand" leftIcon={<Save size={16} />} size="sm" onClick={handleSave}>
+                  Salvar lista
+                </Button>
+              )}
               <Button colorScheme="brand" leftIcon={<Download size={18} />} onClick={onExport} shadow="md">
                 Gerar PDF da Lista
               </Button>
