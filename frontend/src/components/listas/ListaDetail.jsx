@@ -2,9 +2,9 @@ import React, { useEffect, useState } from 'react';
 import {
   Box, Flex, Heading, HStack, Button, VStack, Text, Card, CardBody,
   Badge, Spinner, IconButton, Tag, Collapse, useDisclosure,
-  useColorModeValue,
+  useColorModeValue, useToast,
 } from '@chakra-ui/react';
-import { ArrowLeft, Download, Globe, Lock, Trash2, ChevronDown, ChevronUp } from 'lucide-react';
+import { ArrowLeft, Download, Globe, Lock, Trash2, ChevronDown, ChevronUp, Link2 } from 'lucide-react';
 import MathRenderer from '../shared/MathRenderer';
 import { DiagramRenderer } from '../shared/DiagramRenderer';
 
@@ -107,6 +107,13 @@ export function ListaDetail({ lista, onBack, fetchQuestoes, onRemoveQuestao, onU
   const [currentStatus, setCurrentStatus] = useState(lista.status);
 
   const emptyColor = useColorModeValue('gray.400', 'gray.500');
+  const toast = useToast();
+
+  const handleCopyLink = () => {
+    const url = `${window.location.origin}${window.location.pathname}?lista=${lista.id}`;
+    navigator.clipboard.writeText(url);
+    toast({ title: 'Link copiado!', description: 'Compartilhe com seus alunos.', status: 'success', duration: 3000 });
+  };
 
   useEffect(() => {
     setLoading(true);
@@ -167,6 +174,17 @@ export function ListaDetail({ lista, onBack, fetchQuestoes, onRemoveQuestao, onU
           >
             {currentStatus === 'publicada' ? 'Despublicar' : 'Publicar'}
           </Button>
+          {currentStatus === 'publicada' && (
+            <Button
+              size="sm"
+              variant="outline"
+              colorScheme="blue"
+              leftIcon={<Link2 size={15} />}
+              onClick={handleCopyLink}
+            >
+              Copiar link
+            </Button>
+          )}
           <Button
             size="sm"
             leftIcon={<Download size={15} />}

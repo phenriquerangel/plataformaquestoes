@@ -29,11 +29,23 @@ const MathRenderer = ({ parts, highlight }) => {
     });
   }
 
-  const unifiedParts = Array.isArray(parts) ? parts : [];
+  // Expande partes do tipo 'text' que contenham [math]...[/math] inline
+  const mathTagRegex = /(\[math\][\s\S]*?\[\/math\])/g;
+  const expandedParts = (Array.isArray(parts) ? parts : []).flatMap(part => {
+    if (!part.content) return [part];
+    if (part.type === 'latex') return [part];
+    const segments = part.content.split(mathTagRegex);
+    if (segments.length === 1) return [part];
+    return segments.filter(s => s !== '').map(s =>
+      mathTagRegex.test(s)
+        ? { type: 'latex', content: s.substring(6, s.length - 7) }
+        : { type: 'text', content: s }
+    );
+  });
 
   return (
     <Box as="span" whiteSpace="pre-wrap">
-      {unifiedParts.map((part, index) => {
+      {expandedParts.map((part, index) => {
         if (!part.content) return null;
 
         if (part.type === 'latex') {

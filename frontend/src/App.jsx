@@ -23,6 +23,7 @@ import { MinhasListas } from './components/listas/MinhasListas';
 import { Sidebar, MobileTopBar } from './components/layout/Sidebar';
 import { useAuth } from './hooks/useAuth';
 import { apiClient, apiDownload } from './api';
+import { PublicListaView } from './components/listas/PublicListaView';
 
 const mathJaxConfig = {
   loader: { load: ['input/tex', 'output/svg'] },
@@ -171,6 +172,11 @@ function App() {
       await listas.addQuestaoToLista(nova.id, question.id);
     }
   };
+
+  const publicListaId = new URLSearchParams(window.location.search).get('lista');
+  if (publicListaId) {
+    return <PublicListaView listaId={publicListaId} />;
+  }
 
   if (!isAuthenticated) {
     return (

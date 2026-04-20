@@ -97,6 +97,33 @@ def listar_questoes_da_lista(lista_id: int, db: Session = Depends(get_db), curre
     return {"questoes": questoes, "total": len(questoes)}
 
 
+@router.get("/{lista_id}/public")
+def visualizar_lista_publica(lista_id: int, db: Session = Depends(get_db)):
+    lista = db.query(ListaDB).filter(ListaDB.id == lista_id).first()
+    if not lista:
+        raise HTTPException(status_code=404, detail="Lista não encontrada")
+    if lista.status != "publicada":
+        raise HTTPException(status_code=403, detail="Esta lista não está publicada")
+
+    questoes = []
+    for assoc in lista.questoes:
+        q = assoc.questao
+        if not q:
+            continue
+        alts = q.alternativas if isinstance(q.alternativas, list) else []
+        questoes.append(Question(
+            id=q.id,
+            enunciado=q.enunciado,
+            diagrama=q.diagrama,
+            alternativas=alts,
+            resposta_correta=q.resposta_correta or "",
+            explicacao=q.explicacao,
+            dificuldade=q.dificuldade,
+            tipo=q.tipo or "multipla_escolha",
+        ).dict())
+    return {"id": lista.id, "nome": lista.nome, "questoes": questoes, "total": len(questoes)}
+
+
 @router.post("/{lista_id}/questoes", status_code=201)
 def adicionar_questao(lista_id: int, body: ListaQuestaoAdd, db: Session = Depends(get_db), current_user=Depends(get_current_user)):
     lista = db.query(ListaDB).filter(ListaDB.id == lista_id).first()

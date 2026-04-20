@@ -45,8 +45,8 @@ REGRAS DE FORMATAÇÃO (siga à risca):
    - {{"tipo": "angulo_reto", "vertice": [x,y], "v1": [x,y], "v2": [x,y]}}
    - {{"tipo": "texto", "x": x, "y": y, "conteudo": "...", "ancora": "start|middle|end"}}
    Coordenadas: Y cresce para baixo. Use viewBox "0 0 220 180" como padrão, com margem de 20px.
-4. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. NUNCA uma string. No type `latex`, coloque APENAS o código LaTeX sem delimitadores `$`.
-5. **CAMPO `alternativas`**: Lista de 5 strings simples sem prefixos "A)". Para matemática inline use `[math]...[/math]`.
+4. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. NUNCA uma string. No type `latex`, coloque APENAS o código LaTeX sem delimitadores `$`. Exemplos: expoente → {{"type":"latex","content":"3^{{2}}"}}, fração → {{"type":"latex","content":"\\frac{{1}}{{2}}"}}, raiz → {{"type":"latex","content":"\\sqrt{{9}}"}}.
+5. **CAMPO `alternativas`**: Lista de 5 strings. TODA expressão matemática (expoentes, frações, raízes, equações) DEVE usar `[math]...[/math]`. Exemplos: "[math]3^{{2}}[/math]", "[math]\\frac{{x}}{{2}}[/math]", "[math]\\sqrt{{16}}[/math]". NUNCA escreva `3^2` como texto puro.
 6. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, sem repetição."""
 
 _PROMPT_VERDADEIRO_FALSO = """Gere {quantidade} questões de verdadeiro ou falso sobre o Tema '{assunto}' (Matéria: {materia}{serie_ctx}) com dificuldade '{dificuldade}'.
@@ -65,7 +65,7 @@ _PROMPT_DISSERTATIVA = """Gere {quantidade} questões dissertativas sobre o Tema
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
 2. **ESQUEMA DE CADA OBJETO**: {{"tipo": "dissertativa", "diagrama": null, "enunciado": [...], "alternativas": [], "resposta_correta": "", "explicacao": [...]}}
-3. **CAMPO `enunciado`**: Pergunta ou problema aberto que exige resposta elaborada. OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+3. **CAMPO `enunciado`**: Pergunta ou problema aberto que exige resposta elaborada. OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. No type `latex`, APENAS o código LaTeX sem `$`. Exemplos: {{"type":"latex","content":"3^{{2}}"}}, {{"type":"latex","content":"\\frac{{1}}{{2}}"}}.
 4. **CAMPO `alternativas`**: SEMPRE lista vazia [].
 5. **CAMPO `resposta_correta`**: SEMPRE string vazia "".
 6. **CAMPO `explicacao`**: Resposta modelo completa e bem estruturada. Lista de objetos {{"type": "text"|"latex", "content": "..."}}.
@@ -80,8 +80,9 @@ REGRAS DE FORMATAÇÃO (siga à risca):
 4. **Para múltipla escolha**: alternativas = lista de 5 strings; resposta_correta = uma das alternativas.
 5. **Para verdadeiro/falso**: alternativas = ["Verdadeiro", "Falso"]; resposta_correta = "Verdadeiro" ou "Falso".
 6. **Para dissertativa**: alternativas = []; resposta_correta = ""; explicacao = resposta modelo.
-7. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}.
-8. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema."""
+7. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. No type `latex`, APENAS o código LaTeX sem `$`. Exemplos: {{"type":"latex","content":"3^{{2}}"}}, {{"type":"latex","content":"\\frac{{1}}{{2}}"}}.
+8. **CAMPO `alternativas` (múltipla escolha)**: TODA expressão matemática DEVE usar `[math]...[/math]`. Ex: "[math]3^{{2}}[/math]", "[math]\\frac{{x}}{{2}}[/math]". NUNCA escreva `3^2` como texto puro.
+9. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema."""
 
 _PROMPTS = {
     "multipla_escolha": _PROMPT_MULTIPLA_ESCOLHA,
