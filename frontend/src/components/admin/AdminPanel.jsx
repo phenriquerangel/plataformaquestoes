@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { QuestoesAdmin } from './QuestoesAdmin';
 import { UsuariosAdmin } from './UsuariosAdmin';
 import {
@@ -28,9 +28,13 @@ import {
   IconButton,
   Select,
   Badge,
+  useToast,
+  Alert,
+  AlertIcon,
 } from '@chakra-ui/react';
-import { LayoutGrid, BookOpen, Database, Edit3, Trash2 } from 'lucide-react';
+import { LayoutGrid, BookOpen, Database, Edit3, Trash2, BookMarked } from 'lucide-react';
 import { SERIES_OPTIONS } from '../../constants/series';
+import { apiClient } from '../../api';
 
 export function AdminPanel({
   currentUsername,
@@ -57,8 +61,63 @@ export function AdminPanel({
   assuntosAdminList,
   onStatsRefresh,
 }) {
+  const toast = useToast();
+  const [bnccLoading, setBnccLoading] = useState(false);
+  const [bnccResult, setBnccResult] = useState(null);
+
+  const handleSeedBncc = async () => {
+    if (!window.confirm('Isso vai importar todos os assuntos BNCC (1º EF ao 3º EM) para o banco. Continuar?')) return;
+    setBnccLoading(true);
+    setBnccResult(null);
+    try {
+      const result = await apiClient('admin/seed-bncc', 'POST');
+      setBnccResult(result);
+      toast({ title: 'BNCC importado!', description: result.mensagem, status: 'success', duration: 6000 });
+      if (onStatsRefresh) onStatsRefresh();
+    } catch (e) {
+      toast({ title: 'Erro ao importar BNCC', description: String(e), status: 'error', duration: 6000 });
+    } finally {
+      setBnccLoading(false);
+    }
+  };
+
   return (
     <Box>
+      {/* Importar BNCC */}
+      <Card borderRadius="2xl" mb={8} borderLeft="4px solid" borderColor="green.500">
+        <CardBody>
+          <Flex align="center" justify="space-between" flexWrap="wrap" gap={4}>
+            <HStack spacing={3}>
+              <Box p={2} bg="green.50" color="green.600" borderRadius="lg">
+                <BookMarked size={22} />
+              </Box>
+              <Box>
+                <Heading size="sm">Importar Currículo BNCC</Heading>
+                <Text fontSize="xs" color="gray.500" mt={0.5}>
+                  Popula o banco com todas as séries (1º EF ao 3º EM), matérias e assuntos da BNCC.
+                </Text>
+              </Box>
+            </HStack>
+            <Button
+              colorScheme="green"
+              leftIcon={<BookMarked size={16} />}
+              onClick={handleSeedBncc}
+              isLoading={bnccLoading}
+              loadingText="Importando..."
+              size="sm"
+            >
+              Importar BNCC
+            </Button>
+          </Flex>
+          {bnccResult && (
+            <Alert status="success" borderRadius="lg" mt={4} fontSize="sm">
+              <AlertIcon />
+              {bnccResult.mensagem}
+            </Alert>
+          )}
+        </CardBody>
+      </Card>
+
       {/* Estatísticas Gerais */}
       <SimpleGrid columns={{ base: 1, md: 3 }} spacing={6} mb={10}>
         <Card borderRadius="2xl" shadow="sm" borderLeft="4px solid" borderColor="blue.500">
