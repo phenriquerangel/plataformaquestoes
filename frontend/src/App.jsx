@@ -1,10 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { MathJaxContext } from 'better-react-mathjax';
-import {
-  Box, Container, Heading, HStack, Text,
-  Tabs, TabList, TabPanels, Tab, TabPanel, useToast,
-} from '@chakra-ui/react';
-import { BrainCircuit, Sparkles, Database, Settings } from 'lucide-react';
+import { Box, Container, useToast } from '@chakra-ui/react';
 import { useMaterias } from './hooks/useMaterias';
 import { useAssuntos } from './hooks/useAssuntos';
 import { useCustomList } from './hooks/useCustomList';
@@ -18,6 +14,11 @@ import { CustomList } from './components/shared/CustomList';
 import { DeleteDialog } from './components/shared/DeleteDialog';
 import { EditModal } from './components/shared/EditModal';
 import { AdminPanel } from './components/admin/AdminPanel';
+import { Dashboard } from './components/dashboard/Dashboard';
+import { LogsPage } from './components/logs/LogsPage';
+import { LoginPage } from './components/auth/LoginPage';
+import { Sidebar, MobileTopBar } from './components/layout/Sidebar';
+import { useAuth } from './hooks/useAuth';
 import { apiClient, apiDownload } from './api';
 
 const mathJaxConfig = {
@@ -25,17 +26,10 @@ const mathJaxConfig = {
   tex: { inlineMath: [['$', '$'], ['\\(', '\\)']] },
 };
 
-function CustomTab({ icon, label }) {
-  return (
-    <Tab flex={1} borderRadius="xl" _selected={{ bg: 'white', shadow: 'md', color: 'brand.600' }}
-      _hover={{ color: 'brand.500' }} transition="all 0.3s">
-      <HStack spacing={2}>{icon}<Text fontWeight="bold">{label}</Text></HStack>
-    </Tab>
-  );
-}
-
 function App() {
   const toast = useToast();
+  const { isAuthenticated, isAdmin, username, login, logout } = useAuth();
+  const [activePage, setActivePage] = useState('dashboard');
   const [materia, setMateria] = useState('Geral');
   const [difficulty, setDifficulty] = useState('Media');
   const [quantity, setQuantity] = useState(5);
@@ -44,7 +38,7 @@ function App() {
   const [newAssunto, setNewAssunto] = useState('');
   const [adminMateriaSearch, setAdminMateriaSearch] = useState('');
   const [adminAssuntoSearch, setAdminAssuntoSearch] = useState('');
-  const [adminStats, setAdminStats] = useState({ total_materias: 0, total_assuntos: 0, total_questoes: 0 });
+  const [adminStats, setAdminStats] = useState({ total_materias: 0, total_assuntos: 0, total_questoes: 0, por_dificuldade: {}, por_materia: {} });
 
   const { materiasList, fetchMaterias, addMateria, editMateria, deleteMateria } = useMaterias();
   const {
@@ -59,6 +53,13 @@ function App() {
   const generator = useQuestionGenerator();
   const bank = useQuestionBank();
 
+  const fetchAdminStats = async () => {
+    try {
+      const data = await apiClient(`admin/stats?t=${Date.now()}`);
+      setAdminStats(data);
+    } catch (err) { console.error('Erro ao buscar estatísticas:', err); }
+  };
+
   useEffect(() => { fetchMaterias(); }, [fetchMaterias]);
 
   useEffect(() => {
@@ -70,11 +71,11 @@ function App() {
     if (materiaParaAssunto) fetchAssuntosAdmin(materiaParaAssunto);
   }, [materiaParaAssunto, fetchAssuntosAdmin]);
 
-  const fetchAdminStats = async () => {
-    try {
-      const data = await apiClient(`admin/stats?t=${Date.now()}`);
-      setAdminStats(data);
-    } catch (err) { console.error('Erro ao buscar estatísticas:', err); }
+  const handleNavigate = (page) => {
+    setActivePage(page);
+    fetchMaterias();
+    setSelectedAssuntos([]);
+    if (page === 'admin' || page === 'dashboard') fetchAdminStats();
   };
 
   const handleMateriaChange = (e) => {
@@ -134,39 +135,41 @@ function App() {
     bank.resetFilters();
   };
 
+  if (!isAuthenticated) {
+    return (
+      <MathJaxContext config={mathJaxConfig}>
+        <LoginPage onLogin={login} />
+      </MathJaxContext>
+    );
+  }
+
   return (
     <MathJaxContext config={mathJaxConfig}>
-      <Box bg="white" px={8} py={4} borderBottom="1px" borderColor="gray.200" position="sticky" top={0} zIndex={10} shadow="sm">
-        <Container maxW="container.xl">
-          <HStack spacing={3}>
-            <Box bg="brand.600" p={2} borderRadius="xl" color="white" shadow="md"><BrainCircuit size={24} /></Box>
-            <Heading size="md" fontWeight="800" letterSpacing="tight">
-              EduQuest<Text as="span" color="brand.600">.ai</Text>
-            </Heading>
-          </HStack>
-        </Container>
-      </Box>
+      <Box display="flex" minH="100vh" bg="gray.50">
+        {/* Sidebar desktop */}
+        <Sidebar activePage={activePage} onNavigate={handleNavigate} isAdmin={isAdmin} username={username} onLogout={logout} />
 
-      <Container maxW="container.lg" py={12}>
-        <Tabs variant="unstyled" isLazy onChange={(i) => { fetchMaterias(); setSelectedAssuntos([]); if (i === 2) fetchAdminStats(); }}>
-          <TabList bg="gray.200" p={1} borderRadius="2xl" mb={10} display="flex">
-            <CustomTab icon={<Sparkles size={18} />} label="Gerador" />
-            <CustomTab icon={<Database size={18} />} label="Banco" />
-            <CustomTab icon={<Settings size={18} />} label="Admin" />
-          </TabList>
+        {/* Conteúdo principal */}
+        <Box flex="1" ml={{ base: 0, md: '220px' }} display="flex" flexDirection="column">
+          {/* Top bar mobile */}
+          <MobileTopBar activePage={activePage} onNavigate={handleNavigate} isAdmin={isAdmin} username={username} onLogout={logout} />
 
-          <CustomList
-            customList={customList}
-            customListTitle={customListTitle}
-            setCustomListTitle={setCustomListTitle}
-            onToggle={toggleQuestion}
-            onMove={moveQuestion}
-            onClear={clear}
-            onExport={() => handleExportPDF(customList, customListTitle)}
-          />
+          <Container maxW="container.lg" py={8} px={{ base: 4, md: 8 }}>
+            <CustomList
+              customList={customList}
+              customListTitle={customListTitle}
+              setCustomListTitle={setCustomListTitle}
+              onToggle={toggleQuestion}
+              onMove={moveQuestion}
+              onClear={clear}
+              onExport={() => handleExportPDF(customList, customListTitle)}
+            />
 
-          <TabPanels>
-            <TabPanel p={0}>
+            {activePage === 'dashboard' && (
+              <Dashboard stats={adminStats} />
+            )}
+
+            {activePage === 'generator' && (
               <QuestionGenerator
                 materiasList={materiasList}
                 materia={materia}
@@ -188,8 +191,9 @@ function App() {
                 onAddToList={toggleQuestion}
                 customList={customList}
               />
-            </TabPanel>
-            <TabPanel p={0}>
+            )}
+
+            {activePage === 'bank' && (
               <QuestionBank
                 materiasList={materiasList}
                 materia={materia}
@@ -218,9 +222,13 @@ function App() {
                 onAddAll={() => addAll(bank.questions)}
                 customList={customList}
               />
-            </TabPanel>
-            <TabPanel p={0}>
+            )}
+
+            {activePage === 'logs' && <LogsPage />}
+
+            {activePage === 'admin' && (
               <AdminPanel
+                currentUsername={username}
                 stats={adminStats}
                 materias={materiasList}
                 onEdit={(item, type) => editModal.open(item, type)}
@@ -238,11 +246,12 @@ function App() {
                 adminAssuntoSearch={adminAssuntoSearch}
                 setAdminAssuntoSearch={setAdminAssuntoSearch}
                 assuntosAdminList={assuntosAdminList}
+                onStatsRefresh={fetchAdminStats}
               />
-            </TabPanel>
-          </TabPanels>
-        </Tabs>
-      </Container>
+            )}
+          </Container>
+        </Box>
+      </Box>
 
       <DeleteDialog
         isOpen={deleteDialog.isOpen}

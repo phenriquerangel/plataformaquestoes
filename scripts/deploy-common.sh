@@ -29,13 +29,13 @@ build_images() {
     local sha=$1
     echo "Build das imagens Docker (paralelo)..."
 
-    docker build -t backend-questions:${sha} -t backend-questions:latest ./backend &
+    docker build --no-cache -t backend-questions:${sha} -t backend-questions:latest ./backend &
     local pid_backend=$!
 
-    docker build -t pdf-renderer:${sha} -t pdf-renderer:latest ./pdf-renderer &
+    docker build --no-cache -t pdf-renderer:${sha} -t pdf-renderer:latest ./pdf-renderer &
     local pid_pdf=$!
 
-    docker build -t frontend-questions:${sha} -t frontend-questions:latest ./frontend &
+    docker build --no-cache -t frontend-questions:${sha} -t frontend-questions:latest ./frontend &
     local pid_frontend=$!
 
     docker pull postgres:15-alpine &

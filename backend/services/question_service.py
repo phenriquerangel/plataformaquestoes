@@ -9,6 +9,7 @@ import google.generativeai as genai
 
 from config import GENERATION_BASE_DELAY_SECONDS, GENERATION_MAX_RETRIES
 from models import GenerateRequest, Question, QuestaoGeradaDB
+from services.log_service import registrar_evento_async
 
 api_key = os.getenv("GEMINI_API_KEY")
 if not api_key:
@@ -102,6 +103,11 @@ async def generate_and_stream(request: GenerateRequest, db):
             break
 
     if not response:
+        await registrar_evento_async(
+            "geracao_erro",
+            f"Falha na geração: {request.materia} / {request.assunto}",
+            {"materia": request.materia, "assunto": request.assunto, "dificuldade": request.dificuldade, "erro": "rate_limit_ou_timeout"},
+        )
         yield json.dumps({"error": "Falha ao obter resposta da IA."}) + "\n"
         return
 
@@ -142,7 +148,23 @@ async def generate_and_stream(request: GenerateRequest, db):
             ).dict()) + "\n"
 
         await asyncio.to_thread(db.commit)
+        await registrar_evento_async(
+            "geracao",
+            f"Geração concluída: {request.materia} / {request.assunto} ({request.dificuldade})",
+            {
+                "materia": request.materia,
+                "assunto": request.assunto,
+                "assunto_id": request.assunto_id,
+                "dificuldade": request.dificuldade,
+                "quantidade": request.quantidade,
+            },
+        )
     except Exception as e:
         print(f"Erro ao processar resposta da IA: {e}")
         await asyncio.to_thread(db.rollback)
+        await registrar_evento_async(
+            "geracao_erro",
+            f"Erro ao processar resposta: {request.materia} / {request.assunto}",
+            {"materia": request.materia, "assunto": request.assunto, "dificuldade": request.dificuldade, "erro": str(e)},
+        )
         yield json.dumps({"error": "Erro ao processar resposta da IA."}) + "\n"

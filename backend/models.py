@@ -1,6 +1,7 @@
-from sqlalchemy import Column, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, ForeignKey
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
 from pydantic import BaseModel, Field
 from typing import List, Optional, Union
 
@@ -36,6 +37,25 @@ class QuestaoGeradaDB(Base):
     assunto_id = Column(Integer, ForeignKey("assuntos.id"))
     diagrama_svg = Column(String, nullable=True)
     diagrama = Column(JSONB, nullable=True)
+
+
+class EventoLogDB(Base):
+    __tablename__ = "eventos_log"
+    id = Column(Integer, primary_key=True, index=True)
+    tipo = Column(String, index=True)
+    descricao = Column(String)
+    extra = Column(JSONB, nullable=True)
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), index=True)
+
+
+class UsuarioDB(Base):
+    __tablename__ = "usuarios"
+    id = Column(Integer, primary_key=True, index=True)
+    username = Column(String, unique=True, index=True, nullable=False)
+    password_hash = Column(String, nullable=False)
+    role = Column(String, nullable=False, default="user")
+    ativo = Column(Boolean, default=True, nullable=False)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 # --- Pydantic Schemas ---
@@ -80,6 +100,23 @@ class QuestionListResponse(BaseModel):
 
 class QuestionBatch(BaseModel):
     questoes: List[Question]
+
+
+class QuestionUpdate(BaseModel):
+    dificuldade: Optional[str] = None
+    resposta_correta: Optional[str] = None
+
+
+class UsuarioCreate(BaseModel):
+    username: str = Field(..., min_length=2, max_length=50)
+    password: str = Field(..., min_length=4)
+    role: str = "user"
+
+
+class UsuarioUpdate(BaseModel):
+    role: Optional[str] = None
+    password: Optional[str] = None
+    ativo: Optional[bool] = None
 
 
 class PdfRequest(BaseModel):

@@ -14,49 +14,61 @@ import {
   Flex,
   Button,
 } from '@chakra-ui/react';
-import { Trash2, Plus, Minus, ChevronDown, ChevronUp } from 'lucide-react';
+import { Trash2, Plus, Minus, ChevronDown, ChevronUp, Eye } from 'lucide-react';
 import MathRenderer from './MathRenderer';
 import { DiagramRenderer } from './DiagramRenderer';
+import { QuestionDetailModal } from './QuestionDetailModal';
 
 function QuestionCard({ question, onDelete, onAddToList, customList, showDelete, highlight, index }) {
   const { isOpen, onToggle } = useDisclosure();
+  const { isOpen: isDetailOpen, onOpen: onDetailOpen, onClose: onDetailClose } = useDisclosure();
   const isInList = customList.some(item => item.id === question.id);
 
   return (
-    <Card borderRadius="xl" w="full" shadow="base" border="1px" borderColor="gray.200">
-      <CardBody>
-        <VStack align="stretch" spacing={3}>
-          <HStack justify="space-between">
-            <Text fontWeight="bold" fontSize="md" color="gray.700">
-              <MathRenderer parts={question.enunciado} highlight={highlight} />
-            </Text>
-            <HStack>
-              <Badge variant="outline" colorScheme="gray" fontSize="0.7em">
-                ID: {question.id}
-              </Badge>
-              <Badge colorScheme={question.dificuldade === 'Facil' ? 'green' : question.dificuldade === 'Media' ? 'orange' : 'red'}>
-                {question.dificuldade}
-              </Badge>
-              {showDelete && (
+    <>
+      <QuestionDetailModal isOpen={isDetailOpen} onClose={onDetailClose} question={question} />
+      <Card borderRadius="xl" w="full" shadow="base" border="1px" borderColor="gray.200">
+        <CardBody>
+          <VStack align="stretch" spacing={3}>
+            <HStack justify="space-between">
+              <Text fontWeight="bold" fontSize="md" color="gray.700">
+                <MathRenderer parts={question.enunciado} highlight={highlight} />
+              </Text>
+              <HStack>
+                <Badge variant="outline" colorScheme="gray" fontSize="0.7em">
+                  ID: {question.id}
+                </Badge>
+                <Badge colorScheme={question.dificuldade === 'Facil' ? 'green' : question.dificuldade === 'Media' ? 'orange' : 'red'}>
+                  {question.dificuldade}
+                </Badge>
                 <IconButton
                   size="sm"
                   variant="ghost"
-                  colorScheme="red"
-                  aria-label="Excluir questão"
-                  icon={<Trash2 size={16} />}
-                  onClick={() => onDelete(question.id, index)}
+                  colorScheme="gray"
+                  aria-label="Ver detalhes"
+                  icon={<Eye size={16} />}
+                  onClick={onDetailOpen}
                 />
-              )}
-              <IconButton
-                size="sm"
-                variant={isInList ? "solid" : "outline"}
-                colorScheme="brand"
-                aria-label={isInList ? "Remover da lista" : "Adicionar à lista"}
-                icon={isInList ? <Minus size={16} /> : <Plus size={16} />}
-                onClick={() => onAddToList(question)}
-              />
+                {showDelete && (
+                  <IconButton
+                    size="sm"
+                    variant="ghost"
+                    colorScheme="red"
+                    aria-label="Excluir questão"
+                    icon={<Trash2 size={16} />}
+                    onClick={() => onDelete(question.id, index)}
+                  />
+                )}
+                <IconButton
+                  size="sm"
+                  variant={isInList ? "solid" : "outline"}
+                  colorScheme="brand"
+                  aria-label={isInList ? "Remover da lista" : "Adicionar à lista"}
+                  icon={isInList ? <Minus size={16} /> : <Plus size={16} />}
+                  onClick={() => onAddToList(question)}
+                />
+              </HStack>
             </HStack>
-          </HStack>
           {question.diagrama && (
             <Flex justify="center" my={2} p={4} bg="gray.50" borderRadius="lg" border="1px" borderColor="gray.200">
               <DiagramRenderer diagrama={question.diagrama} />
@@ -91,8 +103,9 @@ function QuestionCard({ question, onDelete, onAddToList, customList, showDelete,
             </Box>
           </Collapse>
         </VStack>
-      </CardBody>
-    </Card>
+        </CardBody>
+      </Card>
+    </>
   );
 }
 

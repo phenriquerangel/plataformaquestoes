@@ -1,4 +1,6 @@
 import React from 'react';
+import { QuestoesAdmin } from './QuestoesAdmin';
+import { UsuariosAdmin } from './UsuariosAdmin';
 import {
   Box,
   SimpleGrid,
@@ -29,6 +31,7 @@ import {
 import { LayoutGrid, BookOpen, Database, Edit3, Trash2 } from 'lucide-react';
 
 export function AdminPanel({
+  currentUsername,
   stats,
   materias,
   onEdit,
@@ -46,6 +49,7 @@ export function AdminPanel({
   adminAssuntoSearch,
   setAdminAssuntoSearch,
   assuntosAdminList,
+  onStatsRefresh,
 }) {
   return (
     <Box>
@@ -239,6 +243,9 @@ export function AdminPanel({
           </CardBody>
         </Card>
       </SimpleGrid>
+
+      <QuestoesAdmin materias={materias} onStatsRefresh={onStatsRefresh} />
+      <UsuariosAdmin currentUsername={currentUsername} />
     </Box>
   );
 }

@@ -26,15 +26,32 @@ spec:
               secretKeyRef:
                 name: gemini-secret
                 key: api-key
+          - name: ADMIN_USERNAME
+            value: "admin"
+          - name: ADMIN_PASSWORD
+            value: "admin123"
+          - name: USER_USERNAME
+            value: "professor"
+          - name: USER_PASSWORD
+            value: "professor123"
+          - name: JWT_SECRET_KEY
+            value: "troque-esta-chave-em-producao"
+          - name: OTEL_EXPORTER_OTLP_ENDPOINT
+            value: "http://tempo.monitoring.svc.cluster.local:4317"
+          - name: OTEL_EXPORTER_OTLP_INSECURE
+            value: "true"
 ---
 apiVersion: v1
 kind: Service
 metadata:
   name: backend-questions-service
+  labels:
+    app: backend-questions
 spec:
   selector:
     app: backend-questions
   ports:
-    - protocol: TCP
+    - name: http
+      protocol: TCP
       port: 8000
       targetPort: 8000

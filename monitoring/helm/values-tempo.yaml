@@ -1,0 +1,9 @@
+# Tempo — backend de traces distribuídos
+# Helm chart: grafana/tempo
+# Recebe traces via OTLP gRPC (porta 4317) e OTLP HTTP (porta 4318)
+
+persistence:
+  enabled: false
+
+tempo:
+  retention: 24h

@@ -1,0 +1,87 @@
+# kube-prometheus-stack — Prometheus + Grafana + node-exporter + kube-state-metrics
+# Helm chart: prometheus-community/kube-prometheus-stack
+
+grafana:
+  enabled: true
+  adminPassword: "admin"
+  persistence:
+    enabled: false
+
+  # Loki e Tempo como datasources adicionais (Prometheus já vem configurado)
+  additionalDataSources:
+    - name: Loki
+      uid: loki
+      type: loki
+      url: http://loki.monitoring.svc.cluster.local:3100
+      access: proxy
+      isDefault: false
+
+    - name: Tempo
+      uid: tempo
+      type: tempo
+      url: http://tempo.monitoring.svc.cluster.local:3200
+      access: proxy
+      isDefault: false
+      jsonData:
+        tracesToLogsV2:
+          datasourceUid: loki
+          spanStartTimeShift: "-1h"
+          spanEndTimeShift: "1h"
+          tags:
+            - key: namespace
+            - key: pod
+        nodeGraph:
+          enabled: true
+        serviceMap:
+          datasourceUid: prometheus
+
+  # Dashboards importados automaticamente do grafana.com
+  dashboardProviders:
+    dashboardproviders.yaml:
+      apiVersion: 1
+      providers:
+        - name: eduquest
+          orgId: 1
+          folder: EduQuest.ai
+          type: file
+          disableDeletion: false
+          editable: true
+          options:
+            path: /var/lib/grafana/dashboards/eduquest
+
+  dashboards:
+    eduquest:
+      fastapi-observability:
+        gnetId: 16110
+        revision: 1
+        datasource: Prometheus
+      kubernetes-cluster:
+        gnetId: 315
+        revision: 3
+        datasource: Prometheus
+      node-exporter:
+        gnetId: 1860
+        revision: 37
+        datasource: Prometheus
+
+prometheus:
+  prometheusSpec:
+    retention: 7d
+    storageSpec: {}  # emptyDir — sem persistência para dev local
+    # Descobrir ServiceMonitors de qualquer namespace
+    serviceMonitorSelectorNilUsesHelmValues: false
+    serviceMonitorSelector: {}
+    serviceMonitorNamespaceSelector: {}
+
+alertmanager:
+  enabled: false
+
+# Componentes do k8s que não são acessíveis no Docker Desktop / kind
+kubeEtcd:
+  enabled: false
+kubeControllerManager:
+  enabled: false
+kubeScheduler:
+  enabled: false
+kubeProxy:
+  enabled: false

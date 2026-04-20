@@ -1,0 +1,17 @@
+# loki-stack — Loki (backend de logs) + Promtail (coletor)
+# Helm chart: grafana/loki-stack
+# Promtail roda como DaemonSet e coleta logs de todos os pods automaticamente
+
+loki:
+  enabled: true
+  persistence:
+    enabled: false
+  config:
+    auth_enabled: false
+
+promtail:
+  enabled: true
+
+# Grafana já está instalado via kube-prometheus-stack
+grafana:
+  enabled: false

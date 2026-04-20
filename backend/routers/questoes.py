@@ -1,6 +1,7 @@
 import json
 from typing import List
 
+from auth import get_current_user, require_admin
 from fastapi import APIRouter, Depends, HTTPException, Query
 from fastapi.responses import StreamingResponse
 from sqlalchemy import String
@@ -8,7 +9,8 @@ from sqlalchemy.orm import Session
 
 from config import QUERY_DEFAULT_LIMIT
 from database import get_db
-from models import GenerateRequest, Question, QuestaoGeradaDB, QuestionListResponse
+from models import GenerateRequest, Question, QuestaoGeradaDB, QuestionListResponse, QuestionUpdate
+from services.log_service import registrar_evento
 from services.question_service import generate_and_stream
 
 router = APIRouter(tags=["Questões"])
@@ -24,6 +26,7 @@ def listar_questoes_salvas(
     offset: int = Query(0),
     ordem: str = Query("desc"),
     db: Session = Depends(get_db),
+    _=Depends(get_current_user),
 ):
     query = db.query(QuestaoGeradaDB)
 
@@ -73,14 +76,29 @@ def listar_questoes_salvas(
     return {"questoes": parsed, "total": total}
 
 
+@router.put("/questoes/{questao_id}")
+def atualizar_questao(questao_id: int, body: QuestionUpdate, db: Session = Depends(get_db), _=Depends(require_admin)):
+    questao = db.query(QuestaoGeradaDB).filter(QuestaoGeradaDB.id == questao_id).first()
+    if not questao:
+        raise HTTPException(status_code=404, detail="Questão não encontrada")
+    if body.dificuldade is not None:
+        questao.dificuldade = body.dificuldade
+    if body.resposta_correta is not None:
+        questao.resposta_correta = body.resposta_correta
+    db.commit()
+    return {"message": "Questão atualizada com sucesso"}
+
+
 @router.delete("/questoes/{questao_id}")
-def excluir_questao(questao_id: int, db: Session = Depends(get_db)):
+def excluir_questao(questao_id: int, db: Session = Depends(get_db), _=Depends(require_admin)):
     questao = db.query(QuestaoGeradaDB).filter(QuestaoGeradaDB.id == questao_id).first()
     if not questao:
         raise HTTPException(status_code=404, detail="Questão não encontrada")
     try:
+        assunto_id = questao.assunto_id
         db.delete(questao)
         db.commit()
+        registrar_evento("exclusao_questao", f"Questão #{questao_id} excluída", {"questao_id": questao_id, "assunto_id": assunto_id})
         return {"message": "Questão excluída com sucesso"}
     except Exception as e:
         db.rollback()
@@ -88,5 +106,5 @@ def excluir_questao(questao_id: int, db: Session = Depends(get_db)):
 
 
 @router.post("/generate")
-async def generate_questions_stream(request: GenerateRequest, db: Session = Depends(get_db)):
+async def generate_questions_stream(request: GenerateRequest, db: Session = Depends(get_db), _=Depends(get_current_user)):
     return StreamingResponse(generate_and_stream(request, db), media_type="application/x-ndjson")

@@ -13,3 +13,12 @@ apply_manifests
 set_images_sha "$GIT_SHA"
 wait_rollouts
 print_summary "$GIT_SHA"
+
+# Observabilidade — rode com MONITORING=1 ./deploy-mac.sh para instalar/atualizar
+if [ "${MONITORING}" = "1" ]; then
+  echo
+  bash "$(dirname "$0")/deploy-monitoring.sh"
+else
+  echo
+  echo "Dica: rode 'MONITORING=1 ./deploy-mac.sh' para instalar Grafana + Prometheus + Loki + Tempo."
+fi

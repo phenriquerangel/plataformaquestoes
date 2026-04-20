@@ -1,8 +1,19 @@
 const API_BASE = '/api';
+const TOKEN_KEY = 'eduquest_token';
+
+function authHeaders() {
+  const token = localStorage.getItem(TOKEN_KEY);
+  return token ? { Authorization: `Bearer ${token}` } : {};
+}
+
+function handleUnauthorized() {
+  localStorage.removeItem(TOKEN_KEY);
+  window.dispatchEvent(new Event('auth:logout'));
+}
 
 export async function apiClient(endpoint, method = 'GET', body = null) {
   const url = `${API_BASE}/${endpoint}`;
-  const options = { method, headers: {} };
+  const options = { method, headers: { ...authHeaders() } };
 
   if (body) {
     options.headers['Content-Type'] = 'application/json';
@@ -13,6 +24,8 @@ export async function apiClient(endpoint, method = 'GET', body = null) {
 
   const response = await fetch(url, options);
   const text = await response.text();
+
+  if (response.status === 401) { handleUnauthorized(); }
 
   if (!response.ok) {
     console.error(`%c[API] ${response.status} ${response.statusText}`, 'color:red;font-weight:bold', text);
@@ -31,7 +44,7 @@ export async function apiClient(endpoint, method = 'GET', body = null) {
 export async function apiStream(endpoint, body) {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (!response.ok) throw new Error(`Erro ${response.status}: ${response.statusText}`);
@@ -41,7 +54,7 @@ export async function apiStream(endpoint, body) {
 export async function apiDownload(endpoint, body, filename) {
   const response = await fetch(`${API_BASE}/${endpoint}`, {
     method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
+    headers: { 'Content-Type': 'application/json', ...authHeaders() },
     body: JSON.stringify(body),
   });
   if (!response.ok) {
