@@ -15,7 +15,7 @@ class SerieDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, unique=True, nullable=False)
     ordem = Column(Integer, nullable=False)
-    assuntos = relationship("AssuntoDB", back_populates="serie")
+    assuntos = relationship("AssuntoDB", back_populates="serie_rel")
 
 
 class MateriaDB(Base):
