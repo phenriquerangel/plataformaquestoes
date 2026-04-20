@@ -1,17 +1,29 @@
-from fastapi import APIRouter, Depends, HTTPException
+from typing import Optional
+
+from fastapi import APIRouter, Depends, HTTPException, Query
 from sqlalchemy.orm import Session
 
 from auth import get_current_user, require_admin
 from database import get_db
-from models import AssuntoDB, AssuntoCreate
+from models import AssuntoDB, AssuntoCreate, SerieDB
 from services.log_service import registrar_evento
 
 router = APIRouter(prefix="/assuntos", tags=["Assuntos"])
 
 
 @router.get("/{materia_id}")
-def listar_assuntos(materia_id: int, db: Session = Depends(get_db), _=Depends(get_current_user)):
-    return db.query(AssuntoDB).filter(AssuntoDB.materia_id == materia_id).all()
+def listar_assuntos(
+    materia_id: int,
+    serie_nome: Optional[str] = Query(None),
+    db: Session = Depends(get_db),
+    _=Depends(get_current_user),
+):
+    query = db.query(AssuntoDB).filter(AssuntoDB.materia_id == materia_id)
+    if serie_nome:
+        serie = db.query(SerieDB).filter(SerieDB.nome == serie_nome).first()
+        if serie:
+            query = query.filter(AssuntoDB.serie_id == serie.id)
+    return query.all()
 
 
 @router.post("")

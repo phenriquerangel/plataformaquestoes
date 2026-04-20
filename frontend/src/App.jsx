@@ -86,8 +86,8 @@ function App() {
 
   useEffect(() => {
     const matObj = materiasList.find(m => m.nome === materia);
-    fetchAssuntosForMateria(matObj?.id ?? null);
-  }, [materia, materiasList, fetchAssuntosForMateria]);
+    fetchAssuntosForMateria(matObj?.id ?? null, selectedSerie || null);
+  }, [materia, selectedSerie, materiasList, fetchAssuntosForMateria]);
 
   useEffect(() => {
     if (materiaParaAssunto) fetchAssuntosAdmin(materiaParaAssunto);
@@ -159,9 +159,7 @@ function App() {
     bank.resetFilters();
   };
 
-  const filteredMateriasBySerie = selectedSerie
-    ? materiasList.filter(m => m.serie === selectedSerie)
-    : materiasList;
+  const filteredMateriasBySerie = materiasList;
 
   const handleAddToLista = async (listaId, questaoId) => {
     await listas.addQuestaoToLista(listaId, questaoId);

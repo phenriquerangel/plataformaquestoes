@@ -9,14 +9,16 @@ export function useAssuntos() {
   const [subjectSearch, setSubjectSearch] = useState('');
   const toast = useToast();
 
-  const _fetchAssuntos = useCallback(async (materiaId) => {
+  const _fetchAssuntos = useCallback(async (materiaId, serieNome = null) => {
     if (!materiaId) return [];
-    const data = await apiClient(`assuntos/${materiaId}?t=${Date.now()}`);
+    let url = `assuntos/${materiaId}?t=${Date.now()}`;
+    if (serieNome) url += `&serie_nome=${encodeURIComponent(serieNome)}`;
+    const data = await apiClient(url);
     return Array.isArray(data) ? data : [];
   }, []);
 
-  const fetchAssuntosForMateria = useCallback(async (materiaId) => {
-    try { setAssuntosList(await _fetchAssuntos(materiaId)); }
+  const fetchAssuntosForMateria = useCallback(async (materiaId, serieNome = null) => {
+    try { setAssuntosList(await _fetchAssuntos(materiaId, serieNome)); }
     catch (err) { console.error('Erro ao carregar assuntos:', err); }
   }, [_fetchAssuntos]);
 
