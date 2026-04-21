@@ -29,7 +29,12 @@ def listar_assuntos(
 @router.post("")
 def criar_assunto(assunto: AssuntoCreate, db: Session = Depends(get_db), _=Depends(require_admin)):
     try:
-        db_assunto = AssuntoDB(nome=assunto.nome, materia_id=assunto.materia_id, serie=assunto.serie)
+        serie_id = None
+        if assunto.serie:
+            serie_obj = db.query(SerieDB).filter(SerieDB.nome == assunto.serie).first()
+            if serie_obj:
+                serie_id = serie_obj.id
+        db_assunto = AssuntoDB(nome=assunto.nome, materia_id=assunto.materia_id, serie=assunto.serie, serie_id=serie_id)
         db.add(db_assunto)
         db.commit()
         db.refresh(db_assunto)
@@ -46,9 +51,15 @@ def editar_assunto(assunto_id: int, assunto: AssuntoCreate, db: Session = Depend
     if not db_assunto:
         raise HTTPException(status_code=404, detail="Assunto não encontrado")
     try:
+        serie_id = None
+        if assunto.serie:
+            serie_obj = db.query(SerieDB).filter(SerieDB.nome == assunto.serie).first()
+            if serie_obj:
+                serie_id = serie_obj.id
         db_assunto.nome = assunto.nome
         db_assunto.materia_id = assunto.materia_id
         db_assunto.serie = assunto.serie
+        db_assunto.serie_id = serie_id
         db.commit()
         db.refresh(db_assunto)
         return db_assunto

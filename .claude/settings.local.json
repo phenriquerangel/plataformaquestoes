@@ -32,7 +32,8 @@
       "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(p\\) for p in d['paths'] if 'auth' in p or 'login' in p or 'token' in p]\")",
       "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin123\"}')",
       "Bash(python3 -m json.tool)",
-      "Bash(git commit -m 'fix: adiciona campo ordem ao criar SerieDB no seed BNCC *)"
+      "Bash(git commit -m 'fix: adiciona campo ordem ao criar SerieDB no seed BNCC *)",
+      "Bash(cmd /c deploy.bat)"
     ]
   }
 }

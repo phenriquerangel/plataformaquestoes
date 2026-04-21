@@ -7,23 +7,40 @@ export function useQuestionGenerator() {
   const [loading, setLoading] = useState(false);
   const toast = useToast();
 
-  const generate = async ({ materia, serie, selectedAssuntos, difficulty, quantity, tipo = 'multipla_escolha' }) => {
-    if (selectedAssuntos.length === 0) {
-      toast({ title: 'Assunto obrigatório', status: 'warning' });
+  const generate = async ({ materia, materiaId, serie, selectedAssuntos, freeAssunto, difficulty, quantity, tipo = 'multipla_escolha', onAssuntoCriado }) => {
+    const assuntoNome = selectedAssuntos.length > 0
+      ? selectedAssuntos.map(a => a.nome).join(', ')
+      : freeAssunto?.trim();
+    if (!assuntoNome) {
+      toast({ title: 'Informe um assunto', status: 'warning' });
       return;
     }
     setLoading(true);
     setQuestions([]);
     try {
-      const reader = await apiStream('generate', {
+      let assuntoId = selectedAssuntos.length > 0 ? selectedAssuntos[0].id : null;
+
+      if (!assuntoId && assuntoNome && materiaId) {
+        const novoAssunto = await apiClient('assuntos', 'POST', {
+          nome: assuntoNome,
+          materia_id: materiaId,
+          serie: serie || null,
+        });
+        assuntoId = novoAssunto.id;
+        if (onAssuntoCriado) onAssuntoCriado(novoAssunto);
+        toast({ title: `Assunto "${assuntoNome}" cadastrado`, status: 'info', duration: 2000 });
+      }
+
+      const body = {
         materia,
-        assunto: selectedAssuntos.map(a => a.nome).join(', '),
-        assunto_id: selectedAssuntos[0].id,
+        assunto: assuntoNome,
         dificuldade: difficulty,
         quantidade: parseInt(quantity),
         tipo,
         ...(serie ? { serie } : {}),
-      });
+        ...(assuntoId ? { assunto_id: assuntoId } : {}),
+      };
+      const reader = await apiStream('generate', body);
 
       const decoder = new TextDecoder();
       let buffer = '';
@@ -35,8 +52,14 @@ export function useQuestionGenerator() {
         buffer = lines.pop();
         for (const line of lines) {
           if (!line.trim()) continue;
-          try { setQuestions(prev => [...prev, JSON.parse(line)]); }
-          catch (e) { console.error('Erro ao parsear linha do stream:', line, e); }
+          try {
+            const parsed = JSON.parse(line);
+            if (parsed.error) {
+              toast({ title: 'Erro na geração', description: parsed.error, status: 'error', duration: 5000 });
+            } else {
+              setQuestions(prev => [...prev, parsed]);
+            }
+          } catch (e) { console.error('Erro ao parsear linha do stream:', line, e); }
         }
       }
       toast({ title: 'Geração concluída!', status: 'success', duration: 3000 });

@@ -44,5 +44,11 @@ export function useCustomList() {
     setCustomList(list);
   };
 
-  return { customList, customListTitle, setCustomListTitle, toggleQuestion, addAll, moveQuestion, clear: () => setCustomList([]) };
+  const loadLista = (nome, questoes) => {
+    setCustomListTitle(nome);
+    setCustomList(questoes);
+    toast({ title: `Lista "${nome}" carregada no carrinho`, status: 'success', duration: 3000 });
+  };
+
+  return { customList, customListTitle, setCustomListTitle, toggleQuestion, addAll, moveQuestion, clear: () => setCustomList([]), loadLista };
 }

@@ -65,7 +65,7 @@ function App() {
     fetchAssuntosForMateria, fetchAssuntosAdmin,
     addAssunto, editAssunto, deleteAssunto, toggleAssunto,
   } = useAssuntos();
-  const { customList, customListTitle, setCustomListTitle, toggleQuestion, addAll, moveQuestion, clear } = useCustomList();
+  const { customList, customListTitle, setCustomListTitle, toggleQuestion, addAll, moveQuestion, clear, loadLista } = useCustomList();
   const deleteDialog = useDeleteDialog();
   const editModal = useEditModal();
   const generator = useQuestionGenerator();
@@ -166,6 +166,13 @@ function App() {
     await listas.addQuestaoToLista(listaId, questaoId);
   };
 
+  const handleLoadListaToCarrinho = async (lista) => {
+    const { questoes } = await listas.fetchListaQuestoes(lista.id);
+    if (questoes && questoes.length > 0) {
+      loadLista(lista.nome, questoes);
+    }
+  };
+
   const handleCreateAndAdd = async (nome, question) => {
     const nova = await listas.createLista(nome);
     if (nova) {
@@ -239,7 +246,10 @@ function App() {
                     setTipo={setTipo}
                     questions={generator.questions}
                     loading={generator.loading}
-                    onGenerate={() => generator.generate({ materia, serie: selectedSerie, selectedAssuntos, difficulty, quantity, tipo })}
+                    onGenerate={() => {
+                      const matObj = materiasList.find(m => m.nome === materia);
+                      generator.generate({ materia, materiaId: matObj?.id, serie: selectedSerie, selectedAssuntos, freeAssunto: subjectSearch, difficulty, quantity, tipo, onAssuntoCriado: (novoAssunto) => { fetchAssuntosForMateria(matObj?.id, selectedSerie || null); toggleAssunto(novoAssunto); } });
+                    }}
                     onExport={() => handleExportPDF(generator.questions, 'AVALIAÇÃO DE DESEMPENHO')}
                     onDeleteQuestion={generator.deleteQuestion}
                     onAddToList={toggleQuestion}
@@ -298,6 +308,7 @@ function App() {
                     onRemoveQuestaoFromLista={listas.removeQuestaoFromLista}
                     onUpdateLista={listas.updateLista}
                     onExportPDF={handleExportPDF}
+                    onLoadToCarrinho={handleLoadListaToCarrinho}
                   />
                 )}
 

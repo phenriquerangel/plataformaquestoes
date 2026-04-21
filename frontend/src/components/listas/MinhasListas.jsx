@@ -6,7 +6,7 @@ import {
   AlertDialogContent, AlertDialogOverlay,
   useColorModeValue,
 } from '@chakra-ui/react';
-import { BookOpen, Plus, Trash2, Edit2, Check, X } from 'lucide-react';
+import { BookOpen, Plus, Trash2, Edit2, Check, X, ShoppingCart } from 'lucide-react';
 import { ListaDetail } from './ListaDetail';
 
 const STATUS_COLORS = {
@@ -19,7 +19,7 @@ const STATUS_LABELS = {
   publicada: 'Publicada',
 };
 
-function ListaCard({ lista, onDelete, onRename, onOpen }) {
+function ListaCard({ lista, onDelete, onRename, onOpen, onLoadToCarrinho }) {
   const [editing, setEditing] = useState(false);
   const [nome, setNome] = useState(lista.nome);
 
@@ -85,6 +85,17 @@ function ListaCard({ lista, onDelete, onRename, onOpen }) {
             <Button size="xs" variant="ghost" colorScheme="brand" onClick={() => onOpen(lista)}>
               Abrir
             </Button>
+            {onLoadToCarrinho && (
+              <IconButton
+                icon={<ShoppingCart size={13} />}
+                size="xs"
+                variant="ghost"
+                colorScheme="teal"
+                onClick={() => onLoadToCarrinho(lista)}
+                aria-label="Carregar no carrinho"
+                title="Carregar no carrinho"
+              />
+            )}
             {!editing && (
               <IconButton icon={<Edit2 size={13} />} size="xs" variant="ghost" onClick={() => setEditing(true)} aria-label="Renomear" />
             )}
@@ -98,7 +109,7 @@ function ListaCard({ lista, onDelete, onRename, onOpen }) {
 
 export function MinhasListas({
   listas, loading, onFetch, onCreate, onDelete, onRename,
-  fetchListaQuestoes, onRemoveQuestaoFromLista, onUpdateLista, onExportPDF,
+  fetchListaQuestoes, onRemoveQuestaoFromLista, onUpdateLista, onExportPDF, onLoadToCarrinho,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = React.useRef();
@@ -179,6 +190,7 @@ export function MinhasListas({
               onDelete={handleDelete}
               onRename={onRename}
               onOpen={setSelectedLista}
+              onLoadToCarrinho={onLoadToCarrinho}
             />
           ))}
         </VStack>

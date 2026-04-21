@@ -112,7 +112,7 @@ class AssuntoCreate(BaseModel):
 class GenerateRequest(BaseModel):
     materia: str
     assunto: str
-    assunto_id: int
+    assunto_id: Optional[int] = None
     dificuldade: str
     quantidade: int = Field(3, ge=1, le=10)
     tipo: str = "multipla_escolha"
