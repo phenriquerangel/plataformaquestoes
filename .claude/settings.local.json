@@ -8,7 +8,31 @@
       "Bash(kind version *)",
       "Bash(cmd.exe /c \"kind version\")",
       "Bash(cmd.exe /c \"docker images backend-questions --format \\\\\"{{.Tag}} {{.ID}} {{.CreatedAt}}\\\\\"\")",
-      "Bash(cmd.exe /c \"deploy.bat\")"
+      "Bash(cmd.exe /c \"deploy.bat\")",
+      "Bash(git worktree *)",
+      "Bash(git branch *)",
+      "PowerShell(\"done\")",
+      "Bash(git add *)",
+      "Bash(git commit -m ' *)",
+      "Bash(cmd.exe /c \"cd /d C:\\\\Users\\\\pedro\\\\OneDrive\\\\Documentos\\\\Documentos\\\\Github\\\\plataformaquestoes && deploy.bat\")",
+      "Bash(cmd /c \"C:\\\\\\\\Users\\\\\\\\pedro\\\\\\\\OneDrive\\\\\\\\Documentos\\\\\\\\Documentos\\\\\\\\Github\\\\\\\\plataformaquestoes\\\\\\\\deploy.bat\")",
+      "Bash(cmd.exe /c deploy.bat)",
+      "Bash(kubectl logs *)",
+      "Bash(docker pull *)",
+      "Bash(kind load *)",
+      "Bash(where.exe kind *)",
+      "Read(//c/Users/pedro/**)",
+      "PowerShell(Get-Command kind -ErrorAction SilentlyContinue)",
+      "PowerShell(kubectl get nodes)",
+      "Bash(kubectl rollout *)",
+      "Bash(kubectl port-forward *)",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/token -H 'Content-Type: application/x-www-form-urlencoded' -d 'username=admin&password=admin123')",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\(d\\)\")",
+      "Bash(curl -s http://localhost:8080/api/openapi.json)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(p\\) for p in d['paths'] if 'auth' in p or 'login' in p or 'token' in p]\")",
+      "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin123\"}')",
+      "Bash(python3 -m json.tool)",
+      "Bash(git commit -m 'fix: adiciona campo ordem ao criar SerieDB no seed BNCC *)"
     ]
   }
 }
