@@ -8,7 +8,7 @@ app.use(express.json({ limit: '10mb' }));
 const PORT = 3000;
 
 // Função para converter os dados da questão em uma string HTML
-const generateHtml = (data, title) => {
+const generateHtml = (data, title, incluirGabarito = true) => {
     const questionsHtml = data.map((q, index) => {
         const enunciadoParts = Array.isArray(q.enunciado) ? q.enunciado : [{ type: 'text', content: q.enunciado || '' }];
         const enunciadoHtml = enunciadoParts.map(p => p.type === 'latex' ? `\\(${p.content}\\)` : p.content).join('');
@@ -75,10 +75,10 @@ const generateHtml = (data, title) => {
                 </div>
                 ${questionsHtml}
             </div>
-            <div class="page gabarito-page">
+            ${incluirGabarito ? `<div class="page gabarito-page">
                 <h1>GABARITO E EXPLICAÇÕES</h1>
                 ${gabaritoHtml}
-            </div>
+            </div>` : ''}
         </body>
         </html>
     `;
@@ -86,7 +86,7 @@ const generateHtml = (data, title) => {
 
 // Endpoint que recebe os dados e retorna o PDF
 app.post('/render', async (req, res) => {
-    const { data, title } = req.body;
+    const { data, title, incluir_gabarito } = req.body;
 
     if (!data || !Array.isArray(data)) {
         return res.status(400).send({ error: '"data" (array of questions) is required.' });
@@ -96,7 +96,7 @@ app.post('/render', async (req, res) => {
     try {
         browser = await puppeteer.launch({ headless: true, args: [ '--no-sandbox', '--disable-setuid-sandbox', '--disable-dev-shm-usage', '--font-render-hinting=none', ], });
         const page = await browser.newPage();
-        const htmlContent = generateHtml(data, title || 'Avaliação');
+        const htmlContent = generateHtml(data, title || 'Avaliação', incluir_gabarito !== false);
         await page.setContent(htmlContent, { waitUntil: 'networkidle0' });
         await page.evaluate(async () => { if (window.MathJax && window.MathJax.typesetPromise) { await window.MathJax.typesetPromise(); } });
         const pdfBuffer = await page.pdf({ format: 'A4', printBackground: true, margin: { top: '20mm', right: '20mm', bottom: '25mm', left: '20mm' }, displayHeaderFooter: true, headerTemplate: '<div></div>', footerTemplate: `<div style="font-size: 8px; width: 100%; text-align: center; color: #555;">Página <span class="pageNumber"></span> de <span class="totalPages"></span></div>`, });

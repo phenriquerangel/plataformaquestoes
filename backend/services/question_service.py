@@ -3,6 +3,7 @@ import json
 import os
 import random
 import re
+from datetime import datetime, timedelta, timezone
 
 import google.api_core.exceptions
 import google.generativeai as genai
@@ -38,13 +39,14 @@ _PROMPT_MULTIPLA_ESCOLHA = """Gere {quantidade} questões de múltipla escolha s
 REGRAS DE FORMATAÇÃO (siga à risca):
 1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
 2. **ESQUEMA DE CADA OBJETO**: {{"tipo": "multipla_escolha", "diagrama": null, "enunciado": [...], "alternativas": [...], "resposta_correta": "...", "explicacao": [...]}}
-3. **CAMPO `diagrama`**: Se a questão envolver figura geométrica (triângulos, círculos, quadriláteros, etc.), gere um objeto com "viewBox" e "elementos". Caso contrário use null. Tipos de elementos:
+3. **CAMPO `diagrama`**: Se a questão envolver figura geométrica (triângulos, círculos, quadriláteros, etc.) OU expressões de potenciação/radiciação (use uma grade NxN para representar N², fileiras de quadrados para bases e expoentes, etc.), gere um objeto com "viewBox" e "elementos". Caso contrário use null. Tipos de elementos:
    - {{"tipo": "poligono", "pontos": [[x,y],...], "preenchimento": "#eff6ff", "borda": "#2563eb"}}
    - {{"tipo": "circulo", "cx": x, "cy": y, "r": r, "preenchimento": "#eff6ff", "borda": "#2563eb"}}
    - {{"tipo": "linha", "x1": x, "y1": y, "x2": x, "y2": y, "cor": "#64748b"}}
    - {{"tipo": "angulo_reto", "vertice": [x,y], "v1": [x,y], "v2": [x,y]}}
    - {{"tipo": "texto", "x": x, "y": y, "conteudo": "...", "ancora": "start|middle|end"}}
    Coordenadas: Y cresce para baixo. Use viewBox "0 0 220 180" como padrão, com margem de 20px.
+   Exemplo de grade para 3² (3x3 = 9 quadrados de 30px cada, iniciando em x=35, y=30): gere 9 polígonos {{"tipo":"poligono","pontos":[[35,30],[65,30],[65,60],[35,60]],...}} e os outros 8 deslocados.
 4. **CAMPOS `enunciado` e `explicacao`**: OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. NUNCA uma string. No type `latex`, coloque APENAS o código LaTeX sem delimitadores `$`. ATENÇÃO: dentro de JSON, backslash deve ser escapado com duplo backslash. Exemplos: expoente → {{"type":"latex","content":"3^{{2}}"}}, fração → {{"type":"latex","content":"\\\\frac{{1}}{{2}}"}}, raiz → {{"type":"latex","content":"\\\\sqrt{{9}}"}}, produto → {{"type":"latex","content":"3 \\\\times 4"}}.
 5. **CAMPO `alternativas`**: Lista de 5 strings. TODA expressão matemática (expoentes, frações, raízes, equações) DEVE usar `[math]...[/math]`. ATENÇÃO: dentro de JSON strings, backslash deve ser escapado. Exemplos: "[math]3^{{2}}[/math]", "[math]\\\\frac{{x}}{{2}}[/math]", "[math]\\\\sqrt{{16}}[/math]". NUNCA escreva `3^2` como texto puro.
 6. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema, sem repetição."""
@@ -84,11 +86,24 @@ REGRAS DE FORMATAÇÃO (siga à risca):
 8. **CAMPO `alternativas` (múltipla escolha)**: TODA expressão matemática DEVE usar `[math]...[/math]`. ATENÇÃO: backslash deve ser escapado. Ex: "[math]3^{{2}}[/math]", "[math]\\\\frac{{x}}{{2}}[/math]". NUNCA escreva `3^2` como texto puro.
 9. **VARIEDADE**: As {quantidade} questões devem abordar aspectos diferentes do tema."""
 
+_PROMPT_PROBLEMA = """Gere {quantidade} problemas contextualizados sobre o Tema '{assunto}' (Matéria: {materia}{serie_ctx}) com dificuldade '{dificuldade}'.
+
+REGRAS DE FORMATAÇÃO (siga à risca):
+1. **SAÍDA**: Um array JSON com exatamente {quantidade} objetos. NADA MAIS.
+2. **ESQUEMA DE CADA OBJETO**: {{"tipo": "multipla_escolha", "diagrama": null, "enunciado": [...], "alternativas": [...], "resposta_correta": "...", "explicacao": [...]}}
+3. **CAMPO `enunciado`**: Uma situação-problema do mundo real (história, narrativa, contexto cotidiano) que exige cálculo ou raciocínio para resolver. OBRIGATORIAMENTE lista de objetos {{"type": "text"|"latex", "content": "..."}}. Exemplos: "João tem 4 laranjas e divide cada uma em 4 pedaços. Quantos pedaços ele terá ao todo?", "Uma loja vendeu 3 caixas com 12 chocolates cada. Quantos chocolates foram vendidos?".
+4. **CAMPO `alternativas`**: Lista de 5 strings com possíveis respostas numéricas ou expressões. TODA expressão matemática DEVE usar `[math]...[/math]`.
+5. **CAMPO `resposta_correta`**: Uma das 5 alternativas, a correta.
+6. **CAMPO `explicacao`**: Resolução passo a passo do problema. Lista de objetos {{"type": "text"|"latex", "content": "..."}}.
+7. **CAMPO `diagrama`**: null na maioria dos casos. Use apenas se o problema envolver figura geométrica concreta.
+8. **VARIEDADE**: Os {quantidade} problemas devem ter contextos diferentes (personagens, situações, objetos), sem repetição."""
+
 _PROMPTS = {
     "multipla_escolha": _PROMPT_MULTIPLA_ESCOLHA,
     "verdadeiro_falso": _PROMPT_VERDADEIRO_FALSO,
     "dissertativa": _PROMPT_DISSERTATIVA,
     "misto": _PROMPT_MISTO,
+    "problema": _PROMPT_PROBLEMA,
 }
 
 
@@ -124,7 +139,50 @@ def _clean_q_data(q_data: dict) -> dict | None:
     return q_data
 
 
+def _check_cache_sync(request, db, professor_id: int):
+    """Versão síncrona para uso em asyncio.to_thread."""
+    if not request.assunto_id:
+        return None
+    cutoff = datetime.now(timezone.utc) - timedelta(days=30)
+    query = db.query(QuestaoGeradaDB).filter(
+        QuestaoGeradaDB.assunto_id == request.assunto_id,
+        QuestaoGeradaDB.dificuldade == request.dificuldade,
+        QuestaoGeradaDB.tipo == request.tipo,
+        QuestaoGeradaDB.created_at >= cutoff,
+    )
+    if professor_id:
+        query = query.filter(QuestaoGeradaDB.professor_id == professor_id)
+    if request.recent_ids:
+        query = query.filter(QuestaoGeradaDB.id.notin_(request.recent_ids))
+    candidatas = query.all()
+    if len(candidatas) >= request.quantidade:
+        return random.sample(candidatas, request.quantidade)
+    return None
+
+
 async def generate_and_stream(request: GenerateRequest, db, professor_id: int = None):
+    # Tenta retornar do cache antes de chamar a IA
+    cached = await asyncio.to_thread(_check_cache_sync, request, db, professor_id)
+    if cached:
+        await registrar_evento_async(
+            "geracao_cache",
+            f"Cache hit: {request.materia} / {request.assunto} ({request.dificuldade}, {request.tipo})",
+            {"assunto_id": request.assunto_id, "dificuldade": request.dificuldade, "tipo": request.tipo},
+        )
+        for q in cached:
+            yield json.dumps(Question(
+                id=q.id,
+                enunciado=q.enunciado,
+                diagrama=q.diagrama,
+                alternativas=q.alternativas if isinstance(q.alternativas, list) else [],
+                resposta_correta=q.resposta_correta,
+                explicacao=q.explicacao,
+                dificuldade=q.dificuldade,
+                tipo=q.tipo,
+                tags=q.tags or [],
+            ).dict()) + "\n"
+        return
+
     template = _PROMPTS.get(request.tipo, _PROMPT_MULTIPLA_ESCOLHA)
     serie_ctx = f", Série: {request.serie}" if request.serie else ""
     prompt = template.format(
@@ -134,6 +192,9 @@ async def generate_and_stream(request: GenerateRequest, db, professor_id: int = 
         quantidade=request.quantidade,
         serie_ctx=serie_ctx,
     )
+    if request.recent_ids:
+        ids_str = ", ".join(str(i) for i in request.recent_ids[:20])
+        prompt += f"\n\nIMPORTANTE: Gere questões com contextos e abordagens DIFERENTES das já geradas nesta sessão (IDs {ids_str}). Evite repetir o mesmo enunciado ou situação."
 
     response = None
     for attempt in range(GENERATION_MAX_RETRIES):
@@ -186,7 +247,7 @@ async def generate_and_stream(request: GenerateRequest, db, professor_id: int = 
                 diagrama = None
 
             tipo_questao = q_data.get("tipo", request.tipo)
-            if request.tipo != "misto":
+            if request.tipo not in ("misto",):
                 tipo_questao = request.tipo
 
             nova = QuestaoGeradaDB(

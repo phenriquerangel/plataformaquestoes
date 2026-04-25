@@ -33,7 +33,15 @@
       "Bash(curl -s -X POST http://localhost:8080/api/auth/login -H 'Content-Type: application/json' -d '{\"username\":\"admin\",\"password\":\"admin123\"}')",
       "Bash(python3 -m json.tool)",
       "Bash(git commit -m 'fix: adiciona campo ordem ao criar SerieDB no seed BNCC *)",
-      "Bash(cmd /c deploy.bat)"
+      "Bash(cmd /c deploy.bat)",
+      "Bash(kubectl config *)",
+      "Bash(kubectl set *)",
+      "Bash(helm repo *)",
+      "Bash(kubectl create *)",
+      "Bash(helm upgrade *)",
+      "Bash(xargs grep *)",
+      "Bash(powershell -Command \"& { cmd /c deploy.bat 2>&1 }\")",
+      "Bash(bash -c \"cat deploy.bat | head -20\")"
     ]
   }
 }

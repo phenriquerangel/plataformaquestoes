@@ -15,6 +15,8 @@ export function QuestionBank({
   keywordSearch, setKeywordSearch,
   idSearch, setIdSearch,
   difficultySearch, setDifficultySearch,
+  tipoSearch, setTipoSearch,
+  tagSearch, setTagSearch,
   sortOrder, setSortOrder,
   questions, loading, totalQuestions, offset,
   onSearch, onResetFilters, onDeleteQuestion, onToggleInList, onAddAll, customList,
@@ -37,7 +39,7 @@ export function QuestionBank({
                 </Select>
               </FormControl>
             </HStack>
-            <SimpleGrid columns={{ base: 1, sm: 2, lg: 5 }} spacing={4}>
+            <SimpleGrid columns={{ base: 1, sm: 2, lg: 7 }} spacing={4}>
               <FormControl>
                 <AssuntoSelector
                   selectedAssuntos={selectedAssuntos}
@@ -62,6 +64,20 @@ export function QuestionBank({
                   <option value="Media">Média</option>
                   <option value="Dificil">Difícil</option>
                 </Select>
+              </FormControl>
+              <FormControl>
+                <Select placeholder="Tipo" value={tipoSearch}
+                  onChange={(e) => setTipoSearch(e.target.value)}>
+                  <option value="multipla_escolha">Múltipla Escolha</option>
+                  <option value="verdadeiro_falso">Verdadeiro/Falso</option>
+                  <option value="dissertativa">Dissertativa</option>
+                  <option value="problema">Problemas</option>
+                  <option value="misto">Misto</option>
+                </Select>
+              </FormControl>
+              <FormControl>
+                <Input placeholder="Buscar por tag" value={tagSearch}
+                  onChange={(e) => setTagSearch(e.target.value)} />
               </FormControl>
               <FormControl>
                 <Select value={sortOrder} onChange={(e) => setSortOrder(e.target.value)}>

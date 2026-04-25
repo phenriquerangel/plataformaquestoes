@@ -77,7 +77,7 @@ function ListaCard({ lista, onDelete, onRename, onOpen, onLoadToCarrinho }) {
                 <Tag size="sm" colorScheme={STATUS_COLORS[lista.status] || 'gray'} borderRadius="full">
                   {STATUS_LABELS[lista.status] || lista.status}
                 </Tag>
-                <Text fontSize="xs" color={subtleColor}>{lista.total_questoes} questão{lista.total_questoes !== 1 ? 'ões' : ''}</Text>
+                <Text fontSize="xs" color={subtleColor}>{lista.total_questoes} {lista.total_questoes === 1 ? 'questão' : 'questões'}</Text>
               </HStack>
             </Box>
           </Flex>
@@ -110,6 +110,7 @@ function ListaCard({ lista, onDelete, onRename, onOpen, onLoadToCarrinho }) {
 export function MinhasListas({
   listas, loading, onFetch, onCreate, onDelete, onRename,
   fetchListaQuestoes, onRemoveQuestaoFromLista, onUpdateLista, onExportPDF, onLoadToCarrinho,
+  onDuplicateLista, onReorderQuestoes,
 }) {
   const { isOpen, onOpen, onClose } = useDisclosure();
   const cancelRef = React.useRef();
@@ -149,6 +150,8 @@ export function MinhasListas({
         onRemoveQuestao={onRemoveQuestaoFromLista}
         onUpdateStatus={onUpdateLista}
         onExportPDF={onExportPDF}
+        onDuplicateLista={onDuplicateLista}
+        onReorderQuestoes={onReorderQuestoes}
       />
     );
   }

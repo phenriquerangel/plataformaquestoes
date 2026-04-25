@@ -1,4 +1,4 @@
-from sqlalchemy import Boolean, Column, DateTime, Integer, String, ForeignKey
+from sqlalchemy import Boolean, Column, DateTime, Integer, String, ForeignKey, func as sa_func
 from sqlalchemy.dialects.postgresql import JSONB
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
@@ -51,6 +51,8 @@ class QuestaoGeradaDB(Base):
     professor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=True, index=True)
     diagrama_svg = Column(String, nullable=True)
     diagrama = Column(JSONB, nullable=True)
+    tags = Column(JSONB, nullable=True, default=list)
+    created_at = Column(DateTime(timezone=True), server_default=func.now())
 
 
 class ListaDB(Base):
@@ -58,6 +60,7 @@ class ListaDB(Base):
     id = Column(Integer, primary_key=True, index=True)
     nome = Column(String, nullable=False)
     status = Column(String, nullable=False, default="rascunho")
+    incluir_gabarito = Column(Boolean, nullable=False, default=True)
     professor_id = Column(Integer, ForeignKey("usuarios.id"), nullable=False, index=True)
     created_at = Column(DateTime(timezone=True), server_default=func.now())
     questoes = relationship(
@@ -117,6 +120,7 @@ class GenerateRequest(BaseModel):
     quantidade: int = Field(3, ge=1, le=10)
     tipo: str = "multipla_escolha"
     serie: Optional[str] = None
+    recent_ids: List[int] = []
 
 
 class TextPart(BaseModel):
@@ -134,6 +138,8 @@ class Question(BaseModel):
     explicacao: Union[List[TextPart], str]
     dificuldade: str = None
     tipo: Optional[str] = "multipla_escolha"
+    tags: List[str] = []
+    vezes_usada: int = 0
 
 
 class QuestionListResponse(BaseModel):
@@ -148,6 +154,10 @@ class QuestionBatch(BaseModel):
 class QuestionUpdate(BaseModel):
     dificuldade: Optional[str] = None
     resposta_correta: Optional[str] = None
+    enunciado: Optional[list] = None
+    alternativas: Optional[List[str]] = None
+    explicacao: Optional[list] = None
+    tags: Optional[List[str]] = None
 
 
 class UsuarioCreate(BaseModel):
@@ -165,25 +175,34 @@ class UsuarioUpdate(BaseModel):
 class PdfRequest(BaseModel):
     data: List[Question]
     title: str
+    incluir_gabarito: bool = True
 
 
 class ListaCreate(BaseModel):
     nome: str = Field(..., min_length=1, max_length=200)
+    incluir_gabarito: bool = True
 
 
 class ListaUpdate(BaseModel):
     nome: Optional[str] = Field(None, min_length=1, max_length=200)
     status: Optional[str] = None
+    incluir_gabarito: Optional[bool] = None
 
 
 class ListaQuestaoAdd(BaseModel):
     questao_id: int
 
 
+class ListaQuestaoOrdem(BaseModel):
+    questao_id: int
+    ordem: int
+
+
 class ListaResponse(BaseModel):
     id: int
     nome: str
     status: str
+    incluir_gabarito: bool
     professor_id: int
     total_questoes: int
 

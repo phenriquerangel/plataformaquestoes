@@ -108,10 +108,10 @@ function App() {
     setSubjectSearch('');
   };
 
-  const handleExportPDF = async (data, title) => {
+  const handleExportPDF = async (data, title, incluirGabarito = true) => {
     const toastId = toast({ title: 'Gerando PDF...', status: 'info', duration: null });
     try {
-      await apiDownload('export-pdf', { data, title }, title.replace(/\s+/g, '_').toLowerCase() + '.pdf');
+      await apiDownload('export-pdf', { data, title, incluir_gabarito: incluirGabarito }, title.replace(/\s+/g, '_').toLowerCase() + '.pdf');
       toast.update(toastId, { title: 'PDF gerado com sucesso!', status: 'success', duration: 3000 });
     } catch (err) {
       toast.update(toastId, { title: 'Erro ao gerar PDF', description: err.message, status: 'error', duration: 5000 });
@@ -278,6 +278,10 @@ function App() {
                     setIdSearch={bank.setIdSearch}
                     difficultySearch={bank.difficultySearch}
                     setDifficultySearch={bank.setDifficultySearch}
+                    tipoSearch={bank.tipoSearch}
+                    setTipoSearch={bank.setTipoSearch}
+                    tagSearch={bank.tagSearch}
+                    setTagSearch={bank.setTagSearch}
                     sortOrder={bank.sortOrder}
                     setSortOrder={bank.setSortOrder}
                     questions={bank.questions}
@@ -309,6 +313,8 @@ function App() {
                     onUpdateLista={listas.updateLista}
                     onExportPDF={handleExportPDF}
                     onLoadToCarrinho={handleLoadListaToCarrinho}
+                    onDuplicateLista={listas.duplicateLista}
+                    onReorderQuestoes={listas.reorderQuestoes}
                   />
                 )}
 

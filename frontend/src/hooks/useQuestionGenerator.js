@@ -5,6 +5,7 @@ import { apiClient, apiStream } from '../api';
 export function useQuestionGenerator() {
   const [questions, setQuestions] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [recentIds, setRecentIds] = useState([]);
   const toast = useToast();
 
   const generate = async ({ materia, materiaId, serie, selectedAssuntos, freeAssunto, difficulty, quantity, tipo = 'multipla_escolha', onAssuntoCriado }) => {
@@ -39,6 +40,7 @@ export function useQuestionGenerator() {
         tipo,
         ...(serie ? { serie } : {}),
         ...(assuntoId ? { assunto_id: assuntoId } : {}),
+        recent_ids: recentIds.slice(-50),
       };
       const reader = await apiStream('generate', body);
 
@@ -58,6 +60,7 @@ export function useQuestionGenerator() {
               toast({ title: 'Erro na geração', description: parsed.error, status: 'error', duration: 5000 });
             } else {
               setQuestions(prev => [...prev, parsed]);
+              if (parsed.id) setRecentIds(prev => [...prev, parsed.id]);
             }
           } catch (e) { console.error('Erro ao parsear linha do stream:', line, e); }
         }
@@ -80,5 +83,5 @@ export function useQuestionGenerator() {
     }
   };
 
-  return { questions, loading, generate, deleteQuestion };
+  return { questions, loading, generate, deleteQuestion, recentIds };
 }

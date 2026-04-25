@@ -52,12 +52,32 @@ export function useListas() {
     }
   };
 
-  const fetchListaQuestoes = async (listaId) => {
+  const fetchListaQuestoes = async (listaId, limit = 20, offset = 0) => {
     try {
-      return await apiClient(`listas/${listaId}/questoes`);
+      return await apiClient(`listas/${listaId}/questoes?limit=${limit}&offset=${offset}`);
     } catch (err) {
       toast({ title: 'Erro ao carregar questões', description: err.message, status: 'error' });
       return { questoes: [], total: 0 };
+    }
+  };
+
+  const duplicateLista = async (listaId) => {
+    try {
+      const nova = await apiClient(`listas/${listaId}/duplicate`, 'POST');
+      setListas(prev => [nova, ...prev]);
+      toast({ title: `Lista duplicada como "${nova.nome}"`, status: 'success', duration: 2000 });
+      return nova;
+    } catch (err) {
+      toast({ title: 'Erro ao duplicar lista', description: err.message, status: 'error' });
+      return null;
+    }
+  };
+
+  const reorderQuestoes = async (listaId, ordens) => {
+    try {
+      await apiClient(`listas/${listaId}/questoes/reorder`, 'PATCH', ordens);
+    } catch (err) {
+      toast({ title: 'Erro ao salvar ordem', description: err.message, status: 'error' });
     }
   };
 
@@ -106,5 +126,7 @@ export function useListas() {
     addQuestaoToLista,
     removeQuestaoFromLista,
     saveCurrentListAs,
+    duplicateLista,
+    reorderQuestoes,
   };
 }

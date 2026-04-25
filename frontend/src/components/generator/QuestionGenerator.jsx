@@ -58,6 +58,7 @@ export function QuestionGenerator({
                 <option value="multipla_escolha">Múltipla Escolha</option>
                 <option value="verdadeiro_falso">Verdadeiro / Falso</option>
                 <option value="dissertativa">Dissertativa</option>
+                <option value="problema">Problemas</option>
                 <option value="misto">Misto</option>
               </Select>
             </FormControl>

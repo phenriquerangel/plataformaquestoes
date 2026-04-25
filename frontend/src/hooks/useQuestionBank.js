@@ -12,13 +12,17 @@ export function useQuestionBank() {
   const [keywordSearch, setKeywordSearch] = useState('');
   const [idSearch, setIdSearch] = useState('');
   const [difficultySearch, setDifficultySearch] = useState('');
+  const [tipoSearch, setTipoSearch] = useState('');
+  const [tagSearch, setTagSearch] = useState('');
   const [sortOrder, setSortOrder] = useState('desc');
   const toast = useToast();
 
-  const fetchQuestions = async (newOffset, { selectedAssuntos, keyword, id, difficulty, order } = {}) => {
+  const fetchQuestions = async (newOffset, { selectedAssuntos, keyword, id, difficulty, tipo, tag, order } = {}) => {
     const kw = keyword ?? keywordSearch;
     const ids = id ?? idSearch;
     const diff = difficulty ?? difficultySearch;
+    const tp = tipo ?? tipoSearch;
+    const tg = tag ?? tagSearch;
     const ord = order ?? sortOrder;
     const assuntos = selectedAssuntos ?? [];
 
@@ -38,6 +42,8 @@ export function useQuestionBank() {
       if (kw) params.append('keyword', kw);
     }
     if (diff) params.append('dificuldade', diff);
+    if (tp) params.append('tipo', tp);
+    if (tg) params.append('tag', tg);
     params.append('limit', PAGE_LIMIT);
     params.append('offset', newOffset ?? 0);
     params.append('ordem', ord);
@@ -68,6 +74,8 @@ export function useQuestionBank() {
     setKeywordSearch('');
     setIdSearch('');
     setDifficultySearch('');
+    setTipoSearch('');
+    setTagSearch('');
     setSortOrder('desc');
   };
 
@@ -76,6 +84,8 @@ export function useQuestionBank() {
     keywordSearch, setKeywordSearch,
     idSearch, setIdSearch,
     difficultySearch, setDifficultySearch,
+    tipoSearch, setTipoSearch,
+    tagSearch, setTagSearch,
     sortOrder, setSortOrder,
     fetchQuestions, deleteQuestion, resetFilters,
   };

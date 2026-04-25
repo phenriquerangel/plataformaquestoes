@@ -16,7 +16,7 @@ const mathJaxConfig = {
 
 const DIFFICULTY_COLOR = { Facil: 'green', Media: 'orange', Dificil: 'red' };
 
-function QuestaoRow({ questao, index }) {
+function QuestaoRow({ questao, index, incluirGabarito }) {
   const { isOpen, onToggle } = useDisclosure();
   const cardBg = useColorModeValue('white', 'gray.800');
   const borderColor = useColorModeValue('gray.100', 'gray.700');
@@ -52,29 +52,33 @@ function QuestaoRow({ questao, index }) {
             ))}
           </VStack>
         )}
-        <Button
-          size="xs"
-          variant="link"
-          colorScheme="blue"
-          onClick={onToggle}
-          rightIcon={isOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
-        >
-          Ver Resposta
-        </Button>
-        <Collapse in={isOpen} animateOpacity>
-          <Box p={3} mt={2} bg={collapseBg} borderRadius="md" border="1px" borderColor={collapseBorder}>
-            <Text fontSize="xs" as="div">
-              <Box as="strong" mr={1}>Resposta:</Box>
-              <MathRenderer parts={questao.resposta_correta} />
-            </Text>
-            {questao.explicacao && (
-              <Text fontSize="xs" mt={1} as="div">
-                <Box as="strong" mr={1}>Explicação:</Box>
-                <MathRenderer parts={questao.explicacao} />
-              </Text>
-            )}
-          </Box>
-        </Collapse>
+        {incluirGabarito && (
+          <>
+            <Button
+              size="xs"
+              variant="link"
+              colorScheme="blue"
+              onClick={onToggle}
+              rightIcon={isOpen ? <ChevronUp size={13} /> : <ChevronDown size={13} />}
+            >
+              Ver Resposta
+            </Button>
+            <Collapse in={isOpen} animateOpacity>
+              <Box p={3} mt={2} bg={collapseBg} borderRadius="md" border="1px" borderColor={collapseBorder}>
+                <Text fontSize="xs" as="div">
+                  <Box as="strong" mr={1}>Resposta:</Box>
+                  <MathRenderer parts={questao.resposta_correta} />
+                </Text>
+                {questao.explicacao && (
+                  <Text fontSize="xs" mt={1} as="div">
+                    <Box as="strong" mr={1}>Explicação:</Box>
+                    <MathRenderer parts={questao.explicacao} />
+                  </Text>
+                )}
+              </Box>
+            </Collapse>
+          </>
+        )}
       </CardBody>
     </Card>
   );
@@ -112,11 +116,11 @@ export function PublicListaView({ listaId }) {
             <>
               <Box mb={8}>
                 <Heading size="lg" mb={1}>{data.nome}</Heading>
-                <Text fontSize="sm" color="gray.500">{data.total} questão{data.total !== 1 ? 'ões' : ''}</Text>
+                <Text fontSize="sm" color="gray.500">{data.total} {data.total === 1 ? 'questão' : 'questões'}</Text>
               </Box>
               <VStack spacing={4} align="stretch">
                 {data.questoes.map((q, i) => (
-                  <QuestaoRow key={q.id} questao={q} index={i} />
+                  <QuestaoRow key={q.id} questao={q} index={i} incluirGabarito={data.incluir_gabarito ?? true} />
                 ))}
               </VStack>
             </>
